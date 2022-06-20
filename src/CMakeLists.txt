@@ -11,6 +11,9 @@
 # the public, perform publicly and display publicly, and to permit others to do so.
 #=========================================================================================
 
+# TAU Tracing/Plugin Support
+find_package(TAU MODULE REQUIRED)
+
 # Configure config.hpp
 set(PROBLEM_GENERATOR "<not-implemented>") # TODO: Figure out what to put here
 if (ENABLE_MPI)
@@ -243,7 +246,8 @@ if (ENABLE_MPI)
 endif()
 
 if (ENABLE_OPENMP)
-  target_link_libraries(parthenon PUBLIC OpenMP::OpenMP_CXX)
+  # Disabled because TAU forces enable anyway
+  # target_link_libraries(parthenon PUBLIC OpenMP::OpenMP_CXX)
 endif()
 
 if (ENABLE_HDF5)
@@ -262,6 +266,7 @@ if (Kokkos_ENABLE_CUDA AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 endif()
 
 target_link_libraries(parthenon PUBLIC Kokkos::kokkos)
+target_link_libraries(parthenon PUBLIC TAU::TAU)
 
 lint_target(parthenon)
 

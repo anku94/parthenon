@@ -24,6 +24,8 @@ endif()
 
 include(CTest)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+
 # Compile time constants
 
 # Compile Options

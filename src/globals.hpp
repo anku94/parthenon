@@ -19,10 +19,14 @@
 //! \file globals.hpp
 //  \brief namespace containing external global variables
 
+
+#include <cstddef>
+
 namespace parthenon {
 namespace Globals {
 
 extern int my_rank, nranks, nghost;
+extern size_t tau_amr_module;
 
 } // namespace Globals
 } // namespace parthenon
