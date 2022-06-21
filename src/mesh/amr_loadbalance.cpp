@@ -39,8 +39,7 @@
 #include "utils/buffer_utils.hpp"
 #include "utils/error_checking.hpp"
 
-#include <TAU.h>
-#include <Profile/TauPluginTypes.h>
+#include "tau_types.h"
 
 namespace parthenon {
 
@@ -58,12 +57,6 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin,
     nbnew += nnew;
     nbdel += ndel;
   }
-
-  int data = 5000;
-  TAU_PROFILE_TIMER(timer, "trigger_timer", "", TAU_DEFAULT);
-  TAU_PROFILE_START(timer);
-  TAU_TRIGGER(Globals::tau_amr_module, (void *)&data);
-  TAU_PROFILE_STOP(timer);
 
   lb_flag_ |= lb_automatic_;
 
@@ -155,6 +148,7 @@ void Mesh::CalculateLoadBalance(std::vector<double> const &costlist,
 
   // Assigns blocks to ranks on a rougly cost-equal basis.
   AssignBlocks(costlist, ranklist);
+  tau::LogBlockAssignment(costlist, ranklist);
 
   // Updates nslist with the ID of the starting block on each rank and the count of blocks
   // on each rank.
