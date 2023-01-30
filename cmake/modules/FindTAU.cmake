@@ -203,6 +203,7 @@ if (TAU_FOUND)
     INTERFACE_LINK_LIBRARIES ${TAU_LIBS} ${OpenMP_CXX_FLAGS})
   set_property(TARGET TAU::TAU PROPERTY
     INTERFACE_COMPILE_DEFINITIONS ${TAU_COMPILE_DEFS})
+  target_compile_options(TAU::TAU INTERFACE -g)
   # Make executable symbols available to dlopen'ed libs
   target_link_options(TAU::TAU INTERFACE LINKER:--export-dynamic)
 else()

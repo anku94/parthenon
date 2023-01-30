@@ -93,6 +93,9 @@ void AssignBlocks(std::vector<double> const &costlist, std::vector<int> &ranklis
 
   int rank = (Globals::nranks)-1;
   double target_cost = total_cost / Globals::nranks;
+
+  tau::LogTargetCost(target_cost);
+
   double my_cost = 0.0;
   double remaining_cost = total_cost;
   // create rank list from the end: the master MPI rank should have less load
