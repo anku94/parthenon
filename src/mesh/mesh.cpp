@@ -457,7 +457,8 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, Packages_t &packages,
 
   ranklist = std::vector<int>(nbtotal);
 
-  nslist = std::vector<int>(Globals::nranks);
+  //  nslist = std::vector<int>(Globals::nranks);
+  rblist = std::vector<std::vector<int>>(Globals::nranks);
   nblist = std::vector<int>(Globals::nranks);
   if (adaptive) { // allocate arrays for AMR
     nref = std::vector<int>(Globals::nranks);
@@ -473,7 +474,7 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, Packages_t &packages,
   // initialize cost array with the simplest estimate; all the blocks are equal
   costlist = std::vector<double>(nbtotal, 1.0);
 
-  CalculateLoadBalance(costlist, ranklist, nslist, nblist);
+  CalculateLoadBalance(costlist, ranklist, rblist, nblist);
 
   // Output some diagnostic information to terminal
 
@@ -486,17 +487,18 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, Packages_t &packages,
   mesh_data.SetMeshPointer(this);
 
   // create MeshBlock list for this process
-  int nbs = nslist[Globals::my_rank];
-  int nbe = nbs + nblist[Globals::my_rank] - 1;
-  // create MeshBlock list for this process
+  std::vector<int> const& myrblist = rblist[Globals::my_rank];
+  int nblocal = nblist[Globals::my_rank];
+
   block_list.clear();
-  block_list.resize(nbe - nbs + 1);
-  for (int i = nbs; i <= nbe; i++) {
-    SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
+  block_list.resize(nblocal);
+  for (int bidx = 0; bidx < nblocal; bidx++) {
+    int bid = myrblist[bidx];
+    SetBlockSizeAndBoundaries(loclist[bid], block_size, block_bcs);
     // create a block and add into the link list
-    block_list[i - nbs] = MeshBlock::Make(i, i - nbs, loclist[i], block_size, block_bcs,
+    block_list[bidx] = MeshBlock::Make(bid, bidx, loclist[bid], block_size, block_bcs,
                                           this, pin, app_in, packages, gflag);
-    block_list[i - nbs]->SearchAndSetNeighbors(tree, ranklist.data(), nslist.data());
+    block_list[bidx]->SearchAndSetNeighbors(tree, rblist, ranklist);
   }
 
   ResetLoadBalanceVariables();
@@ -726,7 +728,8 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, RestartReader &rr,
 #endif
   costlist = std::vector<double>(nbtotal, 1.0);
   ranklist = std::vector<int>(nbtotal);
-  nslist = std::vector<int>(Globals::nranks);
+//  nslist = std::vector<int>(Globals::nranks);
+  rblist = std::vector<std::vector<int>>(Globals::nranks);
   nblist = std::vector<int>(Globals::nranks);
 
   if (adaptive) { // allocate arrays for AMR
@@ -740,7 +743,7 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, RestartReader &rr,
     bddisp = std::vector<int>(Globals::nranks);
   }
 
-  CalculateLoadBalance(costlist, ranklist, nslist, nblist);
+  CalculateLoadBalance(costlist, ranklist, rblist, nblist);
 
   // Output MeshBlock list and quit (mesh test only); do not create meshes
   if (mesh_test > 0) {
@@ -749,26 +752,26 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, RestartReader &rr,
   }
 
   // allocate data buffer
-  int nb = nblist[Globals::my_rank];
-  int nbs = nslist[Globals::my_rank];
-  int nbe = nbs + nb - 1;
-
   mesh_data.SetMeshPointer(this);
+
+  std::vector<int> const& myrblist = rblist[Globals::my_rank];
+  int nblocal = nblist[Globals::my_rank];
 
   // Create MeshBlocks (parallel)
   block_list.clear();
-  block_list.resize(nbe - nbs + 1);
-  for (int i = nbs; i <= nbe; i++) {
+  block_list.resize(nblocal);
+  for (int bidx = 0; bidx < nblocal; bidx++) {
+    int bid = myrblist[bidx];
     for (auto &v : block_bcs) {
       v = parthenon::BoundaryFlag::undef;
     }
-    SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
+    SetBlockSizeAndBoundaries(loclist[bid], block_size, block_bcs);
 
     // create a block and add into the link list
-    block_list[i - nbs] =
-        MeshBlock::Make(i, i - nbs, loclist[i], block_size, block_bcs, this, pin, app_in,
-                        packages, gflag, costlist[i]);
-    block_list[i - nbs]->SearchAndSetNeighbors(tree, ranklist.data(), nslist.data());
+    block_list[bidx] =
+        MeshBlock::Make(bid, bidx, loclist[bid], block_size, block_bcs, this, pin, app_in,
+                        packages, gflag, costlist[bid]);
+    block_list[bidx]->SearchAndSetNeighbors(tree, rblist, ranklist);
   }
 
   ResetLoadBalanceVariables();
