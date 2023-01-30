@@ -177,11 +177,13 @@ class Mesh {
   /// Maps Global Block IDs to which rank the block is mapped to.
   std::vector<int> ranklist;
   /// Maps rank to start of local block IDs.
-  std::vector<int> nslist;
+  //  std::vector<int> nslist;
   /// Maps rank to count of local blocks.
   std::vector<int> nblist;
   /// Maps global block ID to its cost
   std::vector<double> costlist;
+  // Maps rank to all block IDs, non-contiguous
+  std::vector<std::vector<int>> rblist;
   // 8x arrays used exclusively for AMR (not SMR):
   /// Count of blocks to refine on each rank
   std::vector<int> nref;
@@ -215,7 +217,7 @@ class Mesh {
   MeshGenFunc MeshGenerator_[4];
 
   void CalculateLoadBalance(std::vector<double> const &costlist,
-                            std::vector<int> &ranklist, std::vector<int> &nslist,
+                            std::vector<int> &ranklist, std::vector<std::vector<int>> &rblist,
                             std::vector<int> &nblist);
   void ResetLoadBalanceVariables();
 
