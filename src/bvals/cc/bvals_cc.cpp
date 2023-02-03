@@ -39,6 +39,7 @@
 #include "mesh/meshblock.hpp"
 #include "parameter_input.hpp"
 #include "utils/buffer_utils.hpp"
+#include "utils/debug_utils.hpp"
 #include "utils/error_checking.hpp"
 
 namespace parthenon {
@@ -310,12 +311,21 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
       tag = pmb->pbval->CreateBvalsMPITag(nb.snb.lid, nb.targetid, cc_phys_id_);
       if (bd_var_.req_send[nb.bufid] != MPI_REQUEST_NULL)
         MPI_Request_free(&bd_var_.req_send[nb.bufid]);
+
+      void *tmp;
+      tmp = &(bd_var_.req_send[nb.bufid]);
+      DebugUtils::LogFunc(pmy_block_.lock()->gid, "MPI_Send_init", "send_bc", nb.snb.rank, nb.bufid, tmp);
+
       PARTHENON_MPI_CHECK(MPI_Send_init(bd_var_.send[nb.bufid].data(), ssize,
                                         MPI_PARTHENON_REAL, nb.snb.rank, tag,
                                         MPI_COMM_WORLD, &(bd_var_.req_send[nb.bufid])));
       tag = pmb->pbval->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_phys_id_);
       if (bd_var_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
         MPI_Request_free(&bd_var_.req_recv[nb.bufid]);
+
+      tmp = &(bd_var_.req_recv[nb.bufid]);
+      DebugUtils::LogFunc(pmy_block_.lock()->gid, "MPI_Recv_init", "recv_bc", nb.snb.rank, nb.bufid, tmp);
+
       PARTHENON_MPI_CHECK(MPI_Recv_init(bd_var_.recv[nb.bufid].data(), rsize,
                                         MPI_PARTHENON_REAL, nb.snb.rank, tag,
                                         MPI_COMM_WORLD, &(bd_var_.req_recv[nb.bufid])));
@@ -333,6 +343,10 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
           tag = pmb->pbval->CreateBvalsMPITag(nb.snb.lid, nb.targetid, cc_flx_phys_id_);
           if (bd_var_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
+
+          tmp = &(bd_var_flcor_.req_send[nb.bufid]);
+          DebugUtils::LogFunc(pmy_block_.lock()->gid, "MPI_Send_init", "send_fl", nb.snb.rank, nb.bufid, tmp);
+
           PARTHENON_MPI_CHECK(MPI_Send_init(
               bd_var_flcor_.send[nb.bufid].data(), size, MPI_PARTHENON_REAL, nb.snb.rank,
               tag, MPI_COMM_WORLD, &(bd_var_flcor_.req_send[nb.bufid])));
@@ -340,6 +354,10 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
           tag = pmb->pbval->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_flx_phys_id_);
           if (bd_var_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
+
+          void *tmp = &(bd_var_flcor_.req_recv[nb.bufid]);
+          DebugUtils::LogFunc(pmy_block_.lock()->gid, "MPI_recv_init", "recv_fl", nb.snb.rank, nb.bufid, tmp);
+
           PARTHENON_MPI_CHECK(MPI_Recv_init(
               bd_var_flcor_.recv[nb.bufid].data(), size, MPI_PARTHENON_REAL, nb.snb.rank,
               tag, MPI_COMM_WORLD, &(bd_var_flcor_.req_recv[nb.bufid])));
@@ -359,15 +377,26 @@ void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
     NeighborBlock &nb = pmb->pbval->neighbor[n];
     if (nb.snb.rank != Globals::my_rank) {
       pmb->exec_space.fence();
+
+      void *tmp;
+      tmp = &(bd_var_.req_recv[nb.bufid]);
+      DebugUtils::LogFunc(pmy_block_.lock()->gid, "MPI_Start", "recv_bc", nb.snb.rank, nb.bufid, tmp);
+
       PARTHENON_MPI_CHECK(MPI_Start(&(bd_var_.req_recv[nb.bufid])));
+
       if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face &&
-          nb.snb.level > mylevel) // opposite condition in ClearBoundary()
+          nb.snb.level > mylevel) { // opposite condition in ClearBoundary()
+
+        tmp = &(bd_var_flcor_.req_recv[nb.bufid]);
+        DebugUtils::LogFunc(pmy_block_.lock()->gid, "MPI_Start", "recv_fl", nb.snb.rank, nb.bufid, tmp);
+
         PARTHENON_MPI_CHECK(MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid])));
+      }
     }
   }
 #endif
   return;
-}
+} // namespace parthenon
 
 void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   std::shared_ptr<MeshBlock> pmb = GetBlockPointer();
@@ -384,12 +413,21 @@ void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
     int mylevel = pmb->loc.level;
     if (nb.snb.rank != Globals::my_rank) {
       pmb->exec_space.fence();
+      void *tmp;
+
+      tmp = &(bd_var_.req_send[nb.bufid]);
+      DebugUtils::LogFunc(pmy_block_.lock()->gid, "MPI_Wait", "send_bc", -1, nb.bufid, tmp);
+
       // Wait for Isend
       PARTHENON_MPI_CHECK(MPI_Wait(&(bd_var_.req_send[nb.bufid]), MPI_STATUS_IGNORE));
       if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face &&
-          nb.snb.level < mylevel)
+          nb.snb.level < mylevel) {
+        tmp = &(bd_var_flcor_.req_send[nb.bufid]);
+        DebugUtils::LogFunc(pmy_block_.lock()->gid, "MPI_Wait", "send_fl", -1, nb.bufid, tmp);
+
         PARTHENON_MPI_CHECK(
             MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]), MPI_STATUS_IGNORE));
+      }
     }
 #endif
   }

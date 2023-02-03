@@ -29,6 +29,7 @@
 #include "mesh/mesh_refinement.hpp"
 #include "mesh/meshblock.hpp"
 #include "mesh/refinement_cc_in_one.hpp"
+#include "utils/debug_utils.hpp"
 
 namespace parthenon {
 
@@ -401,6 +402,8 @@ void SendAndNotify(MeshData<Real> *md) {
                 ->flag[nb.targetid] = parthenon::BoundaryStatus::arrived;
           } else {
 #ifdef MPI_PARALLEL
+            void* tmp = &(pbd_var_->req_send[nb.bufid]);
+            DebugUtils::LogFunc(pmb->gid, "MPI_Start", "send_*", -1, nb.bufid, tmp);
             PARTHENON_MPI_CHECK(MPI_Start(&(pbd_var_->req_send[nb.bufid])));
 #endif
           }

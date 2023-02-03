@@ -202,6 +202,7 @@ add_library(parthenon
   utils/buffer_utils.cpp
   utils/buffer_utils.hpp
   utils/change_rundir.cpp
+  utils/debug_utils.cpp
   utils/error_checking.hpp
   utils/error_checking.cpp
   utils/mpi_types.hpp

@@ -38,6 +38,7 @@
 #include "mesh/meshblock_tree.hpp"
 #include "parthenon_arrays.hpp"
 #include "utils/buffer_utils.hpp"
+#include "utils/debug_utils.hpp"
 #include "utils/error_checking.hpp"
 
 #include "tau_types.h"
@@ -95,7 +96,7 @@ void AssignBlocks(std::vector<double> const &costlist, std::vector<int> &ranklis
   int rank = (Globals::nranks)-1;
   double target_cost = total_cost / Globals::nranks;
 
-  tau::LogTargetCost(target_cost);
+  // tau::LogTargetCost(target_cost);
 
   double my_cost = 0.0;
   double remaining_cost = total_cost;
@@ -135,6 +136,8 @@ void UpdateBlockList(std::vector<int> const &ranklist,
     rblist[rank].push_back(block_id);
     nblist[rank]++;
   }
+
+  DebugUtils::LogRankBlockList(rblist, nblist);
 }
 } // namespace
 
@@ -769,6 +772,8 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
       }
     }
 
+    DebugUtils::LogBlockList("[LBandAMR][Step 8] OldBlockList", block_list);
+
     // Replace the MeshBlock list
     block_list = std::move(new_block_list);
 
@@ -779,6 +784,8 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
       block_list[nidx]->lid = nidx;
     }
   }
+
+  DebugUtils::LogBlockList("[LBandAMR][Step 8] NewBlockList", block_list);
   Kokkos::Profiling::popRegion(); // Step 8: Construct new MeshBlockList
 
   // Step 9. Receive the data and load into MeshBlocks

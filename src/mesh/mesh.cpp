@@ -52,6 +52,7 @@
 #include "parameter_input.hpp"
 #include "parthenon_arrays.hpp"
 #include "utils/buffer_utils.hpp"
+#include "utils/debug_utils.hpp"
 #include "utils/error_checking.hpp"
 #include "utils/partition_stl_containers.hpp"
 
@@ -487,7 +488,7 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, Packages_t &packages,
   mesh_data.SetMeshPointer(this);
 
   // create MeshBlock list for this process
-  std::vector<int> const& myrblist = rblist[Globals::my_rank];
+  std::vector<int> const &myrblist = rblist[Globals::my_rank];
   int nblocal = nblist[Globals::my_rank];
 
   block_list.clear();
@@ -497,7 +498,7 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, Packages_t &packages,
     SetBlockSizeAndBoundaries(loclist[bid], block_size, block_bcs);
     // create a block and add into the link list
     block_list[bidx] = MeshBlock::Make(bid, bidx, loclist[bid], block_size, block_bcs,
-                                          this, pin, app_in, packages, gflag);
+                                       this, pin, app_in, packages, gflag);
     block_list[bidx]->SearchAndSetNeighbors(tree, rblist, ranklist);
   }
 
@@ -728,7 +729,7 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, RestartReader &rr,
 #endif
   costlist = std::vector<double>(nbtotal, 1.0);
   ranklist = std::vector<int>(nbtotal);
-//  nslist = std::vector<int>(Globals::nranks);
+  //  nslist = std::vector<int>(Globals::nranks);
   rblist = std::vector<std::vector<int>>(Globals::nranks);
   nblist = std::vector<int>(Globals::nranks);
 
@@ -754,7 +755,7 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, RestartReader &rr,
   // allocate data buffer
   mesh_data.SetMeshPointer(this);
 
-  std::vector<int> const& myrblist = rblist[Globals::my_rank];
+  std::vector<int> const &myrblist = rblist[Globals::my_rank];
   int nblocal = nblist[Globals::my_rank];
 
   // Create MeshBlocks (parallel)
@@ -768,9 +769,8 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, RestartReader &rr,
     SetBlockSizeAndBoundaries(loclist[bid], block_size, block_bcs);
 
     // create a block and add into the link list
-    block_list[bidx] =
-        MeshBlock::Make(bid, bidx, loclist[bid], block_size, block_bcs, this, pin, app_in,
-                        packages, gflag, costlist[bid]);
+    block_list[bidx] = MeshBlock::Make(bid, bidx, loclist[bid], block_size, block_bcs,
+                                       this, pin, app_in, packages, gflag, costlist[bid]);
     block_list[bidx]->SearchAndSetNeighbors(tree, rblist, ranklist);
   }
 
@@ -1035,6 +1035,8 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
       }
     }
 
+    DebugUtils::Log(LOG_DBUG, "SetupPersistentMPI Begin");
+
     // Create send/recv MPI_Requests for all BoundaryData objects
     for (int i = 0; i < nmb; ++i) {
       auto &pmb = block_list[i];
@@ -1043,6 +1045,10 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
       pmb->meshblock_data.Get()->SetupPersistentMPI();
       pmb->swarm_data.Get()->SetupPersistentMPI();
     }
+
+    DebugUtils::LogBlockList("SetupPersistentMPI Blocks", block_list);
+
+    DebugUtils::Log(LOG_DBUG, "StartReceiving Begin");
 
     // prepare to receive conserved variables
     for (int i = 0; i < nmb; ++i) {
@@ -1128,6 +1134,9 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
       init_done = false;
       // caching nbtotal the private variable my be updated in the following function
       const int nb_before_loadbalance = nbtotal;
+
+      DebugUtils::Log(LOG_DBUG, "LoadBalancingAndAdaptiveMeshRefinement Begin");
+
       LoadBalancingAndAdaptiveMeshRefinement(pin, app_in);
       if (nbtotal == nb_before_loadbalance) {
         init_done = true;
@@ -1146,7 +1155,11 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
                   << std::endl;
       }
     }
+
+    DebugUtils::Log(LOG_DBUG, "Iteration END");
   } while (!init_done);
+
+  DebugUtils::Log(LOG_DBUG, "Mesh::Initlaize complete!\n");
 
   Kokkos::Profiling::popRegion(); // Mesh::Initialize
 }
