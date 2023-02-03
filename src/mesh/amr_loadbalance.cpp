@@ -119,28 +119,12 @@ void AssignBlocks(std::vector<double> const &costlist, std::vector<int> &ranklis
   }
 }
 
-void UpdateBlockList(std::vector<int> const &ranklist, std::vector<int> &nslist,
-                     std::vector<int> &nblist) {
-  nslist.resize(Globals::nranks);
-  nblist.resize(Globals::nranks);
-
-  nslist[0] = 0;
-  int rank = 0;
-  for (int block_id = 1; block_id < ranklist.size(); block_id++) {
-    if (ranklist[block_id] != ranklist[block_id - 1]) {
-      nblist[rank] = block_id - nslist[rank];
-      nslist[++rank] = block_id;
-    }
-  }
-  nblist[rank] = ranklist.size() - nslist[rank];
-}
-
 void UpdateBlockList(std::vector<int> const &ranklist,
                      std::vector<std::vector<int>> &rblist, std::vector<int> &nblist) {
   rblist.resize(Globals::nranks);
   nblist.resize(Globals::nranks);
 
-  for (auto v : rblist) {
+  for (auto& v : rblist) {
     v.clear();
   }
 
@@ -170,9 +154,9 @@ void Mesh::CalculateLoadBalance(std::vector<double> const &costlist,
   double const maxcost = min_max.second == costlist.begin() ? 0.0 : *min_max.second;
 
   // Assigns blocks to ranks on a rougly cost-equal basis.
-  AssignBlocks(costlist, ranklist);
+  // AssignBlocks(costlist, ranklist);
   AmrHacks::AssignBlocks(costlist, ranklist);
-  tau::LogBlockAssignment(costlist, ranklist);
+  // tau::LogBlockAssignment(costlist, ranklist);
 
   // Updates nslist with the ID of the starting block on each rank and the count of blocks
   // on each rank.
@@ -510,7 +494,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
   }
 #ifdef MPI_PARALLEL
   // store old nbstart and nbend before load balancing in Step 2.
-  std::vector<int> omyrblist;
+  std::vector<int> omyrblist(nblist[Globals::my_rank]);
   std::copy(rblist[Globals::my_rank].begin(), rblist[Globals::my_rank].end(),
             omyrblist.begin());
 #endif

@@ -388,8 +388,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree,
           int nlevel = nf->loc_.level;
           int tbid = FindBufferID(0, -n, 0, 0, 0);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-                                          AmrHacks::GetLid(rblist, ranklist, fid),
-                                          0, n,
+                                          AmrHacks::GetLid(rblist, ranklist, fid), 0, n,
                                           0, NeighborConnect::face, bufid, tbid, f1, f2);
           bufid++;
           nneighbor++;
@@ -406,8 +405,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree,
         tbid = FindBufferID(0, -n, 0, myfx1, myfx3);
       }
       neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-                                      AmrHacks::GetLid(rblist, ranklist, nid),
-                                      0, n, 0,
+                                      AmrHacks::GetLid(rblist, ranklist, nid), 0, n, 0,
                                       NeighborConnect::face, bufid, tbid);
       bufid += nf1 * nf2;
       nneighbor++;
@@ -431,10 +429,9 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree,
             int fid = nf->gid_;
             int nlevel = nf->loc_.level;
             int tbid = FindBufferID(0, 0, -n, 0, 0);
-            neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-                                            AmrHacks::GetLid(rblist, ranklist, fid),
-                                            0, 0, n,
-                                            NeighborConnect::face, bufid, tbid, f1, f2);
+            neighbor[nneighbor].SetNeighbor(
+                ranklist[fid], nlevel, fid, AmrHacks::GetLid(rblist, ranklist, fid), 0, 0,
+                n, NeighborConnect::face, bufid, tbid, f1, f2);
             bufid++;
             nneighbor++;
           }
@@ -450,8 +447,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree,
           tbid = FindBufferID(0, 0, -n, myfx1, myfx2);
         }
         neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-                                        AmrHacks::GetLid(rblist, ranklist, nid),
-                                        0, 0, n,
+                                        AmrHacks::GetLid(rblist, ranklist, nid), 0, 0, n,
                                         NeighborConnect::face, bufid, tbid);
         bufid += nf1 * nf2;
         nneighbor++;
@@ -478,9 +474,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree,
           int nlevel = nf->loc_.level;
           int tbid = FindBufferID(-n, -m, 0, 0, 0);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-                                          AmrHacks::GetLid(rblist, ranklist, fid),
-                                          n, m, 0,
-                                          NeighborConnect::edge, bufid, tbid, f1, 0);
+                                          AmrHacks::GetLid(rblist, ranklist, fid), n, m,
+                                          0, NeighborConnect::edge, bufid, tbid, f1, 0);
           bufid++;
           nneighbor++;
         }
@@ -496,9 +491,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree,
         }
         if (nlevel >= loc.level || (myox1 == n && myox2 == m)) {
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-                                          AmrHacks::GetLid(rblist, ranklist, nid),
-                                          n, m, 0,
-                                          NeighborConnect::edge, bufid, tbid);
+                                          AmrHacks::GetLid(rblist, ranklist, nid), n, m,
+                                          0, NeighborConnect::edge, bufid, tbid);
           nneighbor++;
         }
         bufid += nf2;
@@ -528,14 +522,9 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree,
           int fid = nf->gid_;
           int nlevel = nf->loc_.level;
           int tbid = FindBufferID(-n, 0, -m, 0, 0);
-//          neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-//                                          AmrHacks::GetLid(rblist, ranklist, fid),
-//                                          n, 0, m,
-//                                          NeighborConnect::edge, bufid, tbid, f1, 0);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-                                          -1,
-                                          n, 0, m,
-                                          NeighborConnect::edge, bufid, tbid, f1, 0);
+                                          AmrHacks::GetLid(rblist, ranklist, fid), n, 0,
+                                          m, NeighborConnect::edge, bufid, tbid, f1, 0);
           bufid++;
           nneighbor++;
         }
@@ -551,9 +540,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree,
         }
         if (nlevel >= loc.level || (myox1 == n && myox3 == m)) {
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-                                          AmrHacks::GetLid(rblist, ranklist, nid),
-                                          n, 0, m,
-                                          NeighborConnect::edge, bufid, tbid);
+                                          AmrHacks::GetLid(rblist, ranklist, nid), n, 0,
+                                          m, NeighborConnect::edge, bufid, tbid);
           nneighbor++;
         }
         bufid += nf1;
@@ -579,9 +567,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree,
           int nlevel = nf->loc_.level;
           int tbid = FindBufferID(0, -n, -m, 0, 0);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-                                          AmrHacks::GetLid(rblist, ranklist, fid),
-                                          0, n, m,
-                                          NeighborConnect::edge, bufid, tbid, f1, 0);
+                                          AmrHacks::GetLid(rblist, ranklist, fid), 0, n,
+                                          m, NeighborConnect::edge, bufid, tbid, f1, 0);
           bufid++;
           nneighbor++;
         }
@@ -597,9 +584,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree,
         }
         if (nlevel >= loc.level || (myox2 == n && myox3 == m)) {
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-                                          AmrHacks::GetLid(rblist, ranklist, nid),
-                                          0, n, m,
-                                          NeighborConnect::edge, bufid, tbid);
+                                          AmrHacks::GetLid(rblist, ranklist, nid), 0, n,
+                                          m, NeighborConnect::edge, bufid, tbid);
           nneighbor++;
         }
         bufid += nf1;
@@ -628,9 +614,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree,
           int nid = neibt->gid_;
           int tbid = FindBufferID(-n, -m, -l, 0, 0);
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-                                          AmrHacks::GetLid(rblist, ranklist, nid),
-                                          n, m, l,
-                                          NeighborConnect::corner, bufid, tbid);
+                                          AmrHacks::GetLid(rblist, ranklist, nid), n, m,
+                                          l, NeighborConnect::corner, bufid, tbid);
           nneighbor++;
         }
         bufid++;
