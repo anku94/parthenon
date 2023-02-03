@@ -774,7 +774,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
 
     // Ensure local and global ids are correct
     for (int nidx = 0; nidx < nmyrblist.size(); nidx++) {
-      int n = nmyrblist[n];
+      int n = nmyrblist[nidx];
       block_list[nidx]->gid = n;
       block_list[nidx]->lid = nidx;
     }
