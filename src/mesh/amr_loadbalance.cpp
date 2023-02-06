@@ -96,7 +96,7 @@ void AssignBlocks(std::vector<double> const &costlist, std::vector<int> &ranklis
   int rank = (Globals::nranks)-1;
   double target_cost = total_cost / Globals::nranks;
 
-  // tau::LogTargetCost(target_cost);
+  tau::LogTargetCost(target_cost);
 
   double my_cost = 0.0;
   double remaining_cost = total_cost;
@@ -159,7 +159,7 @@ void Mesh::CalculateLoadBalance(std::vector<double> const &costlist,
   // Assigns blocks to ranks on a rougly cost-equal basis.
   // AssignBlocks(costlist, ranklist);
   AmrHacks::AssignBlocks(costlist, ranklist);
-  // tau::LogBlockAssignment(costlist, ranklist);
+  tau::LogBlockAssignment(costlist, ranklist);
 
   // Updates nslist with the ID of the starting block on each rank and the count of blocks
   // on each rank.
