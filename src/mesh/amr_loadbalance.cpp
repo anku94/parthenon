@@ -784,12 +784,14 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
 
     // Replace the MeshBlock list
     block_list = std::move(new_block_list);
+    gid_lid_map.clear();
 
     // Ensure local and global ids are correct
     for (int nidx = 0; nidx < nmyrblist.size(); nidx++) {
       int n = nmyrblist[nidx];
       block_list[nidx]->gid = n;
       block_list[nidx]->lid = nidx;
+      gid_lid_map[n] = nidx;
     }
   }
 
