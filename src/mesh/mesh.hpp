@@ -29,6 +29,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <unordered_map>
 
 #include "application_input.hpp"
 #include "bvals/boundary_conditions.hpp"
@@ -184,6 +185,8 @@ class Mesh {
   std::vector<double> costlist;
   // Maps rank to all block IDs, non-contiguous
   std::vector<std::vector<int>> rblist;
+  // Maps gid to block_list idx for local blocks only
+  std::unordered_map<int, int> gid_lid_map;
   // 8x arrays used exclusively for AMR (not SMR):
   /// Count of blocks to refine on each rank
   std::vector<int> nref;

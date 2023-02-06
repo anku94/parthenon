@@ -492,6 +492,7 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, Packages_t &packages,
   int nblocal = nblist[Globals::my_rank];
 
   block_list.clear();
+  gid_lid_map.clear();
   block_list.resize(nblocal);
   for (int bidx = 0; bidx < nblocal; bidx++) {
     int bid = myrblist[bidx];
@@ -500,6 +501,7 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, Packages_t &packages,
     block_list[bidx] = MeshBlock::Make(bid, bidx, loclist[bid], block_size, block_bcs,
                                        this, pin, app_in, packages, gflag);
     block_list[bidx]->SearchAndSetNeighbors(tree, rblist, ranklist);
+    gid_lid_map[bid] = bidx;
   }
 
   ResetLoadBalanceVariables();
@@ -760,6 +762,7 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, RestartReader &rr,
 
   // Create MeshBlocks (parallel)
   block_list.clear();
+  gid_lid_map.clear();
   block_list.resize(nblocal);
   for (int bidx = 0; bidx < nblocal; bidx++) {
     int bid = myrblist[bidx];
@@ -772,6 +775,7 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, RestartReader &rr,
     block_list[bidx] = MeshBlock::Make(bid, bidx, loclist[bid], block_size, block_bcs,
                                        this, pin, app_in, packages, gflag, costlist[bid]);
     block_list[bidx]->SearchAndSetNeighbors(tree, rblist, ranklist);
+    gid_lid_map[bid] = bidx;
   }
 
   ResetLoadBalanceVariables();
@@ -1167,9 +1171,12 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
 /// Finds location of a block with ID `tgid`. Can provide an optional "hint" to start
 /// the search at.
 std::shared_ptr<MeshBlock> Mesh::FindMeshBlock(int tgid) {
-  // Attempt to simply index into the block list.
-  const int nbs = block_list[0]->gid;
-  const int i = tgid - nbs;
+  if (gid_lid_map.find(tgid) == gid_lid_map.end()) {
+    PARTHENON_THROW("FindMeshBlock: Unable to find tgid");
+    return nullptr;
+  }
+
+  const int i = gid_lid_map[tgid];
   PARTHENON_DEBUG_REQUIRE(0 <= i && i < block_list.size(),
                           "MeshBlock local index out of bounds.");
   PARTHENON_DEBUG_REQUIRE(block_list[i]->gid == tgid, "MeshBlock not found!");
