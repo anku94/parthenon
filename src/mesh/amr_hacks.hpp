@@ -7,6 +7,8 @@
 #include <math.h>
 #include <numeric>
 
+#include "utils/debug_utils.hpp"
+
 namespace parthenon {
 class AmrHacks {
  public:
@@ -14,6 +16,8 @@ class AmrHacks {
                            std::vector<int> &ranklist) {
     // AssignBlocksRoundRobin(costlist, ranklist);
     AssignBlocksContiguous(costlist, ranklist);
+    ranklist.resize(costlist.size());
+
   }
 
   static int GetLid(std::vector<std::vector<int>> const &rblist,
@@ -54,12 +58,11 @@ class AmrHacks {
  private:
   static void AssignBlocksRoundRobin(std::vector<double> const &costlist,
                                      std::vector<int> &ranklist) {
-    int nblocks = costlist.size();
-    int nranks = Globals::nranks;
+    DebugUtils::Log(LOGR0_WARN, "[AmrHacks] Assignment Policy: RoundRobin");
 
-    for (int bid = 0; bid < nblocks; bid++) {
-      int bl_rank = bid % nranks;
-      ranklist[bid] = bl_rank;
+    for (int block_id = 0; block_id < costlist.size(); block_id++) {
+      int block_rank = block_id % Globals::nranks;
+      ranklist[block_id] = block_rank;
     }
 
     return;
@@ -67,6 +70,8 @@ class AmrHacks {
 
   static void AssignBlocksSkewed(std::vector<double> const &costlist,
                                  std::vector<int> &ranklist) {
+    DebugUtils::Log(LOGR0_WARN, "[AmrHacks] Assignment Policy: Skewed");
+
     int nblocks = costlist.size();
     int nranks = Globals::nranks;
 
@@ -99,7 +104,7 @@ class AmrHacks {
 
   static void AssignBlocksContiguous(std::vector<double> const &costlist,
                                      std::vector<int> &ranklist) {
-    ranklist.resize(costlist.size());
+    DebugUtils::Log(LOGR0_WARN, "[AmrHacks] Assignment Policy: Contiguous");
 
     double const total_cost = std::accumulate(costlist.begin(), costlist.end(), 0.0);
 
