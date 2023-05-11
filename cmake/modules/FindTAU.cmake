@@ -11,7 +11,7 @@ set(OMP_PATH "${TAU_BUILD}/lib/shared-phase-ompt-mpi-pdt-openmp"
   CACHE PATH "TAU OpenMP directory")
 set(BFD_ROOT "${TAU_BUILD}/binutils-2.36"
   CACHE PATH "TAU BFD directory")
-set(UNWIND_ROOT "${TAU_BUILD}/libunwind-1.3.1-mpicc" 
+set(UNWIND_ROOT "${TAU_BUILD}/libunwind-1.3.1-gcc" 
   CACHE PATH "TAU libunwind directory")
 set(OTF_ROOT "${TAU_BUILD}/otf2-mpicc"
   CACHE PATH "TAU OTF2 directory")
