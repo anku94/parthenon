@@ -22,6 +22,8 @@
 #include "basic_types.hpp"
 #include "interface/metadata.hpp"
 #include "interface/state_descriptor.hpp"
+#include "mesh/meshblock.hpp"
+#include "outputs/tau_types.h"
 #include "utils/error_checking.hpp"
 
 namespace parthenon {
@@ -381,6 +383,30 @@ StateDescriptor::CreateResolvedStateDescriptor(Packages_t &packages) {
   swarm_tracker.CheckOverridable(&swarm_provider);
 
   return state;
+}
+
+void
+StateDescriptor::FillDerived(MeshBlockData<Real> *rc) const {
+  if (FillDerivedBlock != nullptr) {
+    double begin = tau::GetUsSince(0);
+
+    FillDerivedBlock(rc);
+
+    double fdb_time = tau::GetUsSince(begin);
+    tau::LogBlockEvent(rc->GetBlockPointer()->gid, TAU_BLKEVT_US_FD, fdb_time);
+
+    rc->GetBlockPointer()->AddCostForLoadBalancing(fdb_time / 1e3);
+  }
+}
+
+void
+StateDescriptor::FillDerived(MeshData<Real> *rc) const {
+  if (FillDerivedMesh != nullptr) {
+    std::string msg = "Profiling not implemented for this version of FillDerived";
+    if (Globals::my_rank == 0) PARTHENON_WARN(msg);
+
+    FillDerivedMesh(rc);
+  }
 }
 
 } // namespace parthenon

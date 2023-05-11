@@ -255,12 +255,9 @@ class StateDescriptor {
   void PostFillDerived(MeshData<Real> *rc) const {
     if (PostFillDerivedMesh != nullptr) PostFillDerivedMesh(rc);
   }
-  void FillDerived(MeshBlockData<Real> *rc) const {
-    if (FillDerivedBlock != nullptr) FillDerivedBlock(rc);
-  }
-  void FillDerived(MeshData<Real> *rc) const {
-    if (FillDerivedMesh != nullptr) FillDerivedMesh(rc);
-  }
+  void FillDerived(MeshBlockData<Real> *rc) const;
+
+  void FillDerived(MeshData<Real> *rc) const;
 
   void PreStepDiagnostics(SimTime const &simtime, MeshData<Real> *rc) const {
     if (PreStepDiagnosticsMesh != nullptr) PreStepDiagnosticsMesh(simtime, rc);
