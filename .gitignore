@@ -1,7 +1,6 @@
 # Object and binary directories
 build*/
 bin/
-debug*
 
 # Visualization package files
 .smhist
