@@ -31,6 +31,7 @@
 #include "globals.hpp"
 #include "mesh/mesh.hpp"
 #include "mesh/meshblock_tree.hpp"
+#include "outputs/tau_types.h"
 #include "utils/error_checking.hpp"
 
 namespace parthenon {
@@ -235,6 +236,9 @@ void MeshBlockTree::Refine(int &nnew) {
       }
     }
   }
+
+  tau::LogBlockEvent(gid_, TAU_BLKEVT_FLAG_REF, 1);
+  if (Globals::my_rank == 0)
   // this block is not a leaf anymore
   gid_ = -1;
 
@@ -298,8 +302,12 @@ void MeshBlockTree::Derefine(int &ndel) {
   }
 
   gid_ = pleaf_[0]->gid_; // now this is a leaf; inherit the first leaf's GID
-  for (int n = 0; n < nleaf_; n++)
+  for (int n = 0; n < nleaf_; n++) {
+    int gid = pleaf_[n]->gid_;
+    tau::LogBlockEvent(gid, TAU_BLKEVT_FLAG_REF, -1);
     delete pleaf_[n];
+  }
+
   delete[] pleaf_;
   pleaf_ = nullptr;
   ndel += nleaf_ - 1;

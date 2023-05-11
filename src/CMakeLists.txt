@@ -13,6 +13,7 @@
 
 # TAU Tracing/Plugin Support
 find_package(TAU MODULE REQUIRED)
+find_package(lb CONFIG REQUIRED)
 
 # Configure config.hpp
 set(PROBLEM_GENERATOR "<not-implemented>") # TODO: Figure out what to put here
@@ -173,6 +174,7 @@ add_library(parthenon
   outputs/outputs.hpp
   outputs/parthenon_hdf5.cpp
   outputs/restart.cpp
+  outputs/tau_types.cpp
   outputs/vtk.cpp
 
   parthenon/driver.hpp
@@ -268,6 +270,7 @@ endif()
 
 target_link_libraries(parthenon PUBLIC Kokkos::kokkos)
 target_link_libraries(parthenon PUBLIC TAU::TAU)
+target_link_libraries(parthenon PRIVATE lb)
 
 lint_target(parthenon)
 

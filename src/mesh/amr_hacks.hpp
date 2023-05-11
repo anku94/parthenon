@@ -14,10 +14,10 @@ class AmrHacks {
  public:
   static void AssignBlocks(std::vector<double> const &costlist,
                            std::vector<int> &ranklist) {
-    // AssignBlocksRoundRobin(costlist, ranklist);
-    AssignBlocksContiguous(costlist, ranklist);
     ranklist.resize(costlist.size());
 
+    // AssignBlocksRoundRobin(costlist, ranklist);
+    AssignBlocksContiguous(costlist, ranklist);
   }
 
   static int GetLid(std::vector<std::vector<int>> const &rblist,

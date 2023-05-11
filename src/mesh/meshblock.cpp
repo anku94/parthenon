@@ -27,6 +27,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <TAU.h>
 
 #include "bvals/bvals.hpp"
 #include "coordinates/coordinates.hpp"
@@ -68,6 +69,7 @@ std::shared_ptr<MeshBlock> MeshBlock::Make(int igid, int ilid, LogicalLocation i
                                            ParameterInput *pin, ApplicationInput *app_in,
                                            Packages_t &packages, int igflag,
                                            double icost) {
+  TAU_PROFILE("MB::Make()", "", TAU_USER);
   auto pmb = std::make_shared<MeshBlock>();
   pmb->Initialize(igid, ilid, iloc, input_block, input_bcs, pm, pin, app_in, packages,
                   igflag, icost);
@@ -218,6 +220,29 @@ void MeshBlock::InitializeIndexShapes(const int nx1, const int nx2, const int nx
 void MeshBlock::SetCostForLoadBalancing(double cost) {
   if (pmy_mesh->lb_manual_) {
     cost_ = std::min(cost, TINY_NUMBER);
+    pmy_mesh->lb_flag_ = true;
+  }
+}
+//
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlock::ResetCostForLoadBalancing()
+//  \brief Reset cost_ for lb_manual_ mode
+
+void MeshBlock::ResetCostForLoadBalancing() {
+  if (pmy_mesh->lb_manual_) {
+    cost_ = TINY_NUMBER;
+  } else {
+    cost_ = 1.0;
+  }
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlock::AddCostForLoadBalancing(double cost)
+//  \brief 
+
+void MeshBlock::AddCostForLoadBalancing(double cost) {
+  if (pmy_mesh->lb_manual_) {
+    cost_ = cost;
     pmy_mesh->lb_flag_ = true;
   }
 }

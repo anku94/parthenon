@@ -381,6 +381,10 @@ class MeshBlock : public std::enable_shared_from_this<MeshBlock> {
   void InitializeIndexShapes(const int nx1, const int nx2, const int nx3);
   // functions
   void SetCostForLoadBalancing(double cost);
+ public:
+  void ResetCostForLoadBalancing();
+  void AddCostForLoadBalancing(double cost);
+ private:
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   static void ProblemGeneratorDefault(MeshBlock *pmb, ParameterInput *pin);

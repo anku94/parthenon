@@ -7,7 +7,7 @@ set(TAU_ROOT "${TAU_ROOT}"
   CACHE PATH "TAU root directory")
 set(TAU_BUILD "${TAU_ROOT}/x86_64"
   CACHE PATH "TAU build directory")
-set(OMP_PATH "${TAU_BUILD}/lib/shared-ompt-mpi-pdt-openmp"
+set(OMP_PATH "${TAU_BUILD}/lib/shared-phase-ompt-mpi-pdt-openmp"
   CACHE PATH "TAU OpenMP directory")
 set(BFD_ROOT "${TAU_BUILD}/binutils-2.36"
   CACHE PATH "TAU BFD directory")
@@ -90,12 +90,12 @@ find_library(OMP_LIBRARY
 
 find_library(TAU_CORE
   NAMES
-  tau-ompt-mpi-pdt-openmp
+  tau-phase-ompt-mpi-pdt-openmp
   PATHS "${TAU_ROOT}" PATH_SUFFIXES x86_64/lib REQUIRED)
 
 find_library(TAU_TAUMPI
   NAMES
-  TauMpi-ompt-mpi-pdt-openmp
+  TauMpi-phase-ompt-mpi-pdt-openmp
   PATHS "${TAU_ROOT}" PATH_SUFFIXES x86_64/lib REQUIRED)
 
 find_path(UNWIND_INCLUDE_DIR

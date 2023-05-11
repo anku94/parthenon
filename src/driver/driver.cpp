@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <limits>
+#include <TAU.h>
 
 #include "driver/driver.hpp"
 
@@ -21,6 +22,7 @@
 #include "mesh/mesh.hpp"
 #include "mesh/meshblock.hpp"
 #include "outputs/outputs.hpp"
+#include "outputs/tau_types.h"
 #include "parameter_input.hpp"
 #include "parthenon_mpi.hpp"
 #include "utils/utils.hpp"
@@ -69,6 +71,12 @@ DriverStatus EvolutionDriver::Execute() {
   while (tm.KeepGoing()) {
     if (Globals::my_rank == 0) OutputCycleDiagnostics();
 
+    char ncycle_str[16];
+    snprintf(ncycle_str, 16, "T%d", tm.ncycle);
+    // TAU_PHASE_CREATE_DYNAMIC(ncycle_phase, ncycle_str, "", TAU_USER);
+
+    // TAU_PHASE_START(ncycle_phase);
+
     pmesh->PreStepUserWorkInLoop(pmesh, pinput, tm);
     pmesh->PreStepUserDiagnosticsInLoop(pmesh, pinput, tm);
 
@@ -80,6 +88,9 @@ DriverStatus EvolutionDriver::Execute() {
 
     pmesh->PostStepUserWorkInLoop(pmesh, pinput, tm);
     pmesh->PostStepUserDiagnosticsInLoop(pmesh, pinput, tm);
+
+    // TAU_PHASE_STOP(ncycle_phase);
+    tau::MarkTimestepEnd();
 
     tm.ncycle++;
     tm.time += tm.dt;

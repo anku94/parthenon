@@ -18,12 +18,13 @@
 #include <vector>
 
 #include <Kokkos_Core.hpp>
-#include <TAU.h>
 #include <Profile/TauPluginTypes.h>
+#include <TAU.h>
 
 #include "driver/driver.hpp"
 #include "globals.hpp"
 #include "interface/update.hpp"
+#include "mesh/amr_hacks.hpp"
 #include "mesh/domain.hpp"
 #include "mesh/meshblock.hpp"
 #include "refinement/refinement.hpp"
@@ -69,8 +70,8 @@ ParthenonStatus ParthenonManager::ParthenonInitEnv(int argc, char *argv[]) {
 #endif // MPI_PARALLEL
 
   Globals::tau_amr_module = TAU_CREATE_TRIGGER("load balance module");
-  Tau_enable_plugin_for_trigger_event(TAU_PLUGIN_EVENT_TRIGGER,
-      Globals::tau_amr_module, 0);
+  Tau_enable_plugin_for_trigger_event(TAU_PLUGIN_EVENT_TRIGGER, Globals::tau_amr_module,
+                                      0);
 
   Kokkos::initialize(argc, argv);
 
