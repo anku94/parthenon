@@ -37,11 +37,13 @@
 #include "mesh/meshblock.hpp"
 #include "mesh/meshblock_tree.hpp"
 #include "parthenon_arrays.hpp"
+#include "outputs/tau_types.h"
 #include "utils/buffer_utils.hpp"
 #include "utils/debug_utils.hpp"
 #include "utils/error_checking.hpp"
 
-#include "tau_types.h"
+#include <policy.h>
+#include <lb_policies.h>
 
 namespace parthenon {
 
@@ -52,6 +54,13 @@ namespace parthenon {
 void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin,
                                                   ApplicationInput *app_in) {
   Kokkos::Profiling::pushRegion("LoadBalancingAndAdaptiveMeshRefinement");
+  // MPI_Pcontrol(1);
+
+  int bidx = 0;
+  for (auto &pmb: block_list) {
+    tau::LogBlockEvent(pmb->gid, TAU_BLKEVT_RANK_GID, bidx++);
+  }
+
   int nnew = 0, ndel = 0;
 
   if (adaptive) {
@@ -76,6 +85,10 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin,
     }
     lb_flag_ = false;
   }
+
+  // MPI_Pcontrol(0);
+  // gid = -1 denotes end of LBandAMR
+  tau::LogBlockEvent(-1, TAU_BLKEVT_FLAG_REF, 0);
   Kokkos::Profiling::popRegion(); // LoadBalancingAndAdaptiveMeshRefinement
 }
 
@@ -96,7 +109,7 @@ void AssignBlocks(std::vector<double> const &costlist, std::vector<int> &ranklis
   int rank = (Globals::nranks)-1;
   double target_cost = total_cost / Globals::nranks;
 
-  tau::LogTargetCost(target_cost);
+  // tau::LogTargetCost(target_cost);
 
   double my_cost = 0.0;
   double remaining_cost = total_cost;
@@ -157,9 +170,10 @@ void Mesh::CalculateLoadBalance(std::vector<double> const &costlist,
   double const maxcost = min_max.second == costlist.begin() ? 0.0 : *min_max.second;
 
   // Assigns blocks to ranks on a rougly cost-equal basis.
+  amr::LoadBalancePolicies::AssignBlocks(amr::LoadBalancePolicy::kPolicyLPT, costlist, ranklist, Globals::nranks);
   // AssignBlocks(costlist, ranklist);
-  AmrHacks::AssignBlocks(costlist, ranklist);
-  tau::LogBlockAssignment(costlist, ranklist);
+  // AmrHacks::AssignBlocks(costlist, ranklist);
+  // tau::LogBlockAssignment(costlist, ranklist);
 
   // Updates nslist with the ID of the starting block on each rank and the count of blocks
   // on each rank.
@@ -208,6 +222,11 @@ void Mesh::ResetLoadBalanceVariables() {
     for (auto &pmb : block_list) {
       costlist[pmb->gid] = TINY_NUMBER;
       pmb->ResetTimeMeasurement();
+    }
+  } else if (lb_manual_) {
+    for (auto &pmb : block_list) {
+      costlist[pmb->gid] = TINY_NUMBER;
+      pmb->ResetCostForLoadBalancing();
     }
   }
   lb_flag_ = false;
@@ -384,53 +403,58 @@ void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
 bool Mesh::GatherCostListAndCheckBalance() {
   if (lb_manual_ || lb_automatic_) {
     // local data structure, start offsets for costlist_ro
-    int nslist[Globals::nranks];
+    int nslist_loc[Globals::nranks];
     // temporary costlist, rank ordered. global costlist is gid-ordered
-    double costlist_ro[nbtotal];
+    double costlist_loc[nbtotal];
 
     // Setup nslist
-    nslist[0] = 0;
+    nslist_loc[0] = 0;
     for (int ridx = 1; ridx < Globals::nranks; ridx++) {
-      nslist[ridx] = nslist[ridx - 1] + nblist[ridx];
+      nslist_loc[ridx] = nslist_loc[ridx - 1] + nblist[ridx - 1];
     }
 
     // Setup costlist_ro from Mesh::costlist
     int nblocal = nblist[Globals::my_rank];
-    int nbs = nslist[Globals::my_rank];
+    int nbs = nslist_loc[Globals::my_rank];
 
     const std::vector<int> &myrblist = rblist[Globals::my_rank];
 
     for (int bidx = 0; bidx < nblocal; bidx++) {
       int bid = myrblist[bidx];
-      costlist_ro[nbs + bidx] = costlist[bid];
+      costlist_loc[nbs + bidx] = costlist[bid];
     }
 
 #ifdef MPI_PARALLEL
     PARTHENON_MPI_CHECK(MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_DOUBLE,
-                                       costlist_ro, nblist.data(), nslist, MPI_DOUBLE,
+                                       costlist_loc, nblist.data(), nslist_loc, MPI_DOUBLE,
                                        MPI_COMM_WORLD));
 #endif
+
     double maxcost = 0.0, avecost = 0.0;
     for (int rank = 0; rank < Globals::nranks; rank++) {
       double rcost = 0.0;
-      int ns = nslist[rank];
+      int ns = nslist_loc[rank];
       int ne = ns + nblist[rank];
       for (int n = ns; n < ne; ++n)
-        rcost += costlist_ro[n];
+        rcost += costlist_loc[n];
       maxcost = std::max(maxcost, rcost);
       avecost += rcost;
     }
     avecost /= Globals::nranks;
+
+    if (Globals::my_rank == 0) {
+      DebugUtils::Log(LOG_INFO, "AvgCost: %.1lf\n", avecost);
+    }
 
     // Copy costlist_ro back to Mesh::costlist
     // Currently copying the full costlist.
     // Possible that only inner loop for ridx == Global::my_rank is needed
 
     for (int ridx = 0; ridx < Globals::nranks; ridx++) {
-      int nsrank = nslist[ridx];
+      int nsrank = nslist_loc[ridx];
       for (int bidx = 0; bidx < nblist[ridx]; bidx++) {
-        int bid = rblist[ridx][bid];
-        costlist[bid] = costlist_ro[nsrank + bidx];
+        int bid = rblist[ridx][bidx];
+        costlist[bid] = costlist_loc[nsrank + bidx];
       }
     }
 
