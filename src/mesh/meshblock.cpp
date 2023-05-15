@@ -27,7 +27,9 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#ifdef TAUPROF_ENABLE
 #include <TAU.h>
+#endif
 
 #include "bvals/bvals.hpp"
 #include "coordinates/coordinates.hpp"
@@ -69,7 +71,7 @@ std::shared_ptr<MeshBlock> MeshBlock::Make(int igid, int ilid, LogicalLocation i
                                            ParameterInput *pin, ApplicationInput *app_in,
                                            Packages_t &packages, int igflag,
                                            double icost) {
-  TAU_PROFILE("MB::Make()", "", TAU_USER);
+//  TAU_PROFILE("MB::Make()", "", TAU_USER);
   auto pmb = std::make_shared<MeshBlock>();
   pmb->Initialize(igid, ilid, iloc, input_block, input_bcs, pm, pin, app_in, packages,
                   igflag, icost);

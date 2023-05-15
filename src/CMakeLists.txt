@@ -12,8 +12,8 @@
 #=========================================================================================
 
 # TAU Tracing/Plugin Support
-find_package(TAU MODULE REQUIRED)
-find_package(lb CONFIG REQUIRED)
+find_package(TAU MODULE)
+find_package(lb CONFIG)
 
 # Configure config.hpp
 set(PROBLEM_GENERATOR "<not-implemented>") # TODO: Figure out what to put here
@@ -269,8 +269,15 @@ if (Kokkos_ENABLE_CUDA AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 endif()
 
 target_link_libraries(parthenon PUBLIC Kokkos::kokkos)
-target_link_libraries(parthenon PUBLIC TAU::TAU)
-target_link_libraries(parthenon PRIVATE lb)
+if (TAU_FOUND)
+  target_compile_definitions(parthenon PRIVATE TAUPROF_ENABLE)
+  target_link_libraries(parthenon PUBLIC TAU::TAU)
+endif()
+
+if (lb_FOUND)
+  target_compile_definitions(parthenon PRIVATE LB_ENABLE)
+  target_link_libraries(parthenon PRIVATE lb)
+endif()
 
 lint_target(parthenon)
 

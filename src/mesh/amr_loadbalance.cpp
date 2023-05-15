@@ -42,8 +42,10 @@
 #include "utils/debug_utils.hpp"
 #include "utils/error_checking.hpp"
 
+#ifdef LB_ENABLE
 #include <policy.h>
 #include <lb_policies.h>
+#endif
 
 namespace parthenon {
 
@@ -170,8 +172,11 @@ void Mesh::CalculateLoadBalance(std::vector<double> const &costlist,
   double const maxcost = min_max.second == costlist.begin() ? 0.0 : *min_max.second;
 
   // Assigns blocks to ranks on a rougly cost-equal basis.
+#ifdef LB_ENABLE
   amr::LoadBalancePolicies::AssignBlocks(amr::LoadBalancePolicy::kPolicyLPT, costlist, ranklist, Globals::nranks);
-  // AssignBlocks(costlist, ranklist);
+#else
+   AssignBlocks(costlist, ranklist);
+#endif
   // AmrHacks::AssignBlocks(costlist, ranklist);
   // tau::LogBlockAssignment(costlist, ranklist);
 

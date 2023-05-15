@@ -14,7 +14,10 @@
 #include <algorithm>
 #include <iomanip>
 #include <limits>
+
+#ifdef TAUPROF_ENABLE
 #include <TAU.h>
+#endif
 
 #include "driver/driver.hpp"
 
