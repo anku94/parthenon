@@ -61,7 +61,7 @@ struct LogicalLocation { // aggregate and POD type
   int level;
 
   // operators useful for sorting
-  bool operator==(LogicalLocation &ll) {
+  bool operator==(const LogicalLocation &ll) const {
     return ((ll.level == level) && (ll.lx1 == lx1) && (ll.lx2 == lx2) && (ll.lx3 == lx3));
   }
   static bool Lesser(const LogicalLocation &left, const LogicalLocation &right) {
@@ -69,6 +69,47 @@ struct LogicalLocation { // aggregate and POD type
   }
   static bool Greater(const LogicalLocation &left, const LogicalLocation &right) {
     return left.level > right.level;
+  }
+
+  static void GetParent(const LogicalLocation& loc, LogicalLocation& parent_loc, int& offset) {
+        parent_loc.level = loc.level - 1;
+        parent_loc.lx1 = loc.lx1 >> 1;
+        parent_loc.lx2 = loc.lx2 >> 1;
+        parent_loc.lx3 = loc.lx3 >> 1;
+
+        offset = ((loc.lx1 & 1LL) << 2)
+                + ((loc.lx2 & 1LL) << 1)
+                + (loc.lx3 & 1LL);
+  }
+
+  static bool CompareParents(const LogicalLocation& left, const LogicalLocation& right) {
+      if (left.lx1 != right.lx1) {
+          return left.lx1 < right.lx1;
+      } else if (left.lx2 != right.lx2) {
+            return left.lx2 < right.lx2;
+        } else if (left.lx3 != right.lx3) {
+            return left.lx3 < right.lx3;
+        } else {
+            return false;
+      }
+  }
+
+  static bool SortComparator(const LogicalLocation &left, const LogicalLocation &right) {
+      if (left.level != right.level) {
+          return left.level < right.level;
+      }
+
+      LogicalLocation left_parent, right_parent;
+        int left_offset, right_offset;
+
+      GetParent(left, left_parent, left_offset);
+      GetParent(right, right_parent, right_offset);
+
+      if (left_parent == right_parent) {
+          return left_offset < right_offset;
+      } else {
+          return CompareParents(left_parent, right_parent);
+      }
   }
 };
 
