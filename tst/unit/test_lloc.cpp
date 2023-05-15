@@ -33,5 +33,10 @@ TEST_CASE("LogicalLocation order", "[LogicalLocation]") {
         REQUIRE(parthenon::LogicalLocation::SortComparator(a, d));
         REQUIRE(parthenon::LogicalLocation::SortComparator(b, d));
         REQUIRE(parthenon::LogicalLocation::SortComparator(c, a));
+
+        std::vector<parthenon::LogicalLocation> llv = {a, b, c, d};
+        std::sort(llv.begin(), llv.end(), parthenon::LogicalLocation::SortComparator);
+
+        REQUIRE(llv == std::vector<parthenon::LogicalLocation>{c, a, b, d});
     }
 }
