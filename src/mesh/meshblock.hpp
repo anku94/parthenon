@@ -165,6 +165,8 @@ class MeshBlock : public std::enable_shared_from_this<MeshBlock> {
   // functions
   // Load balancing
   void SetCostForLoadBalancing(double cost);
+  void ResetCostForLoadBalancing();
+  void AddCostForLoadBalancing(double cost);
 
   // Memory usage
   // TODO(JMM): Currently swarm send/receive boundaries are not counted.
@@ -272,8 +274,8 @@ class MeshBlock : public std::enable_shared_from_this<MeshBlock> {
   int GetNumberOfMeshBlockCells() const {
     return block_size.nx1 * block_size.nx2 * block_size.nx3;
   }
-  void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist) {
-    pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
+  void SearchAndSetNeighbors(MeshBlockTree &tree, std::vector<std::vector<int>> &rblist, std::vector<int> &ranklist) {
+    pbval->SearchAndSetNeighbors(tree, rblist, ranklist);
   }
 
   // inform MeshBlock which arrays contained in member Field, Particles,
