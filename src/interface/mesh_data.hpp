@@ -229,9 +229,11 @@ class MeshData {
     stage_name_ = name;
     const int nblocks = blocks.size();
     block_data_.resize(nblocks);
+    block_gids_.resize(nblocks);
     SetMeshPointer(blocks[0]->pmy_mesh);
     for (int i = 0; i < nblocks; i++) {
       block_data_[i] = blocks[i]->meshblock_data.Get(name);
+      block_gids_[i] = blocks[i]->gid;
     }
   }
 
@@ -242,8 +244,10 @@ class MeshData {
     }
     const int nblocks = src->NumBlocks();
     block_data_.resize(nblocks);
+    block_gids_.resize(nblocks);
     for (int i = 0; i < nblocks; i++) {
       block_data_[i]->Copy(src->GetBlockData(i), std::forward<Args>(args)...);
+      block_gids_[i] = src->block_gids_[i];
     }
   }
 
@@ -395,6 +399,7 @@ class MeshData {
   void ClearCaches() {
     sparse_pack_cache_.clear();
     block_data_.clear();
+    block_gids_.clear();
     varPackMap_.clear();
     varFluxPackMap_.clear();
     bvars_cache_.clear();
@@ -422,9 +427,14 @@ class MeshData {
 
   SparsePackCache &GetSparsePackCache() { return sparse_pack_cache_; }
 
+  int GetBlockGid(int i) const {
+    return block_gids_[i];
+  }
+
  private:
   Mesh *pmy_mesh_;
   BlockDataList_t<T> block_data_;
+  std::vector<int> block_gids_;
   std::string stage_name_;
 
   // caches for packs
