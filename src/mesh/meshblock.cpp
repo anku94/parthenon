@@ -242,6 +242,30 @@ void MeshBlock::SetCostForLoadBalancing(double cost) {
   }
 }
 
+//
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlock::ResetCostForLoadBalancing()
+//  \brief Reset cost_ for lb_manual_ mode
+
+void MeshBlock::ResetCostForLoadBalancing() {
+  if (pmy_mesh->lb_manual_) {
+    cost_ = 0;
+  } else {
+    cost_ = 1.0;
+  }
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlock::AddCostForLoadBalancing(double cost)
+//  \brief 
+
+void MeshBlock::AddCostForLoadBalancing(double cost) {
+  if (pmy_mesh->lb_manual_) {
+    cost_ += cost;
+    pmy_mesh->lb_flag_ = true;
+  }
+}
+
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::ResetTimeMeasurement()
 //  \brief reset the MeshBlock cost for automatic load balancing

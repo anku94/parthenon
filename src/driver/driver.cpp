@@ -77,6 +77,10 @@ DriverStatus EvolutionDriver::Execute() {
   while (tm.KeepGoing()) {
     if (Globals::my_rank == 0) OutputCycleDiagnostics();
 
+    for (auto pmb : pmesh->block_list) {
+      pmb->ResetCostForLoadBalancing();
+    }
+
     pmesh->PreStepUserWorkInLoop(pmesh, pinput, tm);
     pmesh->PreStepUserDiagnosticsInLoop(pmesh, pinput, tm);
 
