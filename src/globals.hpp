@@ -36,6 +36,7 @@ struct SparseConfig {
 };
 
 extern int my_rank, nranks, nghost;
+extern size_t tau_amr_module;
 
 extern SparseConfig sparse_config;
 

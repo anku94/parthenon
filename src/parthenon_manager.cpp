@@ -26,6 +26,9 @@
 
 #include <Kokkos_Core.hpp>
 
+#include <Profile/TauPluginTypes.h>
+#include <TAU.h>
+
 #include "amr_criteria/refinement_package.hpp"
 #include "config.hpp"
 #include "driver/driver.hpp"
@@ -75,6 +78,10 @@ ParthenonStatus ParthenonManager::ParthenonInitEnv(int argc, char *argv[]) {
   Globals::my_rank = 0;
   Globals::nranks = 1;
 #endif // MPI_PARALLEL
+
+  Globals::tau_amr_module = TAU_CREATE_TRIGGER("load balance module");
+  Tau_enable_plugin_for_trigger_event(TAU_PLUGIN_EVENT_TRIGGER, Globals::tau_amr_module,
+      0);
 
   Kokkos::initialize(argc, argv);
 
