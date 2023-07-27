@@ -29,6 +29,9 @@
 #include <string>
 #include <tuple>
 
+#include <policy.h>
+#include <lb_policies.h>
+
 #include "parthenon_mpi.hpp"
 
 #include "bvals/boundary_conditions.hpp"
@@ -40,6 +43,7 @@
 #include "mesh/meshblock.hpp"
 #include "mesh/meshblock_tree.hpp"
 #include "parthenon_arrays.hpp"
+#include "outputs/tau_types.h"
 #include "utils/buffer_utils.hpp"
 #include "utils/error_checking.hpp"
 
@@ -52,6 +56,13 @@ namespace parthenon {
 void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin,
                                                   ApplicationInput *app_in) {
   Kokkos::Profiling::pushRegion("LoadBalancingAndAdaptiveMeshRefinement");
+
+
+  int bidx = 0;
+  for (auto& pmb : block_list)  {
+    tau::LogBlockEvent(pmb->gid, TAU_BLKEVT_RANK_GID, bidx++);
+  }
+
   int nnew = 0, ndel = 0;
 
   if (adaptive) {
@@ -70,12 +81,17 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin,
     RedistributeAndRefineMeshBlocks(pin, app_in, nbtotal + nnew - ndel);
     modified = true;
   } else if (lb_flag_ && step_since_lb >= lb_interval_) {
-    if (!GatherCostListAndCheckBalance()) { // load imbalance detected
+    // if (!GatherCostListAndCheckBalance()) { // load imbalance detected
+      // XXX AJ: R&R completely at the interval
+      GatherCostListAndCheckBalance();
       RedistributeAndRefineMeshBlocks(pin, app_in, nbtotal);
       modified = true;
-    }
+    // }
     lb_flag_ = false;
   }
+
+  // gid = -1 denotes end of LBandAMR
+  tau::LogBlockEvent(-1, TAU_BLKEVT_FLAG_REF, 0);
   Kokkos::Profiling::popRegion(); // LoadBalancingAndAdaptiveMeshRefinement
 }
 
@@ -152,8 +168,18 @@ void Mesh::CalculateLoadBalance(std::vector<double> const &costlist,
   double const maxcost = min_max.second == costlist.begin() ? 0.0 : *min_max.second;
 
   // Assigns blocks to ranks on a rougly cost-equal basis.
-  // amr::LoadBalancePolicies::AssignBlocks(amr::LoadBalancePolicy::kPolicyLPT, costlist, ranklist, Globals::nranks);
-  AssignBlocks(costlist, ranklist);
+#define POLICY kPolicyContiguousUnitCost
+#define STR_(x) #x
+#define STR(x) STR_(x)
+#define POLICY_STR STR(POLICY)
+
+  if (Globals::my_rank == 0) {
+    // std::cout << "[LB] kPolicyLPT being invoked!" << std::endl;
+    std::cout << "[LB] " POLICY_STR " being invoked!" << std::endl;
+  }
+
+  amr::LoadBalancePolicies::AssignBlocks(amr::LoadBalancePolicy::POLICY, costlist, ranklist, Globals::nranks);
+  // AssignBlocks(costlist, ranklist);
 
   // Updates nslist with the ID of the starting block on each rank and the count of blocks
   // on each rank.
@@ -226,6 +252,7 @@ void Mesh::UpdateCostList() {
   } else if (lb_flag_) {
     for (auto &pmb : block_list) {
       costlist[pmb->gid] = pmb->cost_;
+      tau::LogBlockEvent(pmb->gid, TAU_BLKEVT_COST, pmb->cost_);
     }
   }
 }

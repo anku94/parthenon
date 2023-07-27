@@ -23,6 +23,7 @@
 #include "kokkos_abstraction.hpp"
 #include "parthenon/package.hpp"
 #include "reconstruct/dc_inline.hpp"
+#include "outputs/tau_types.h"
 #include "utils/error_checking.hpp"
 
 #include "burgers_package.hpp"
@@ -160,6 +161,8 @@ Real EstimateTimestepMesh(MeshData<Real> *md) {
 }
 
 TaskStatus CalculateFluxes(MeshData<Real> *md) {
+  double _ts_beg = tau::GetUsSince(0);
+
   using parthenon::ScratchPad1D;
   using parthenon::team_mbr_t;
   Kokkos::Profiling::pushRegion("Task_burgers_CalculateFluxes");
@@ -361,6 +364,14 @@ TaskStatus CalculateFluxes(MeshData<Real> *md) {
       });
 
   Kokkos::Profiling::popRegion(); // Task_burgers_CalculateFluxes
+  double cf_time = tau::GetUsSince(_ts_beg);
+  cf_time /= nblocks; // assume all blocks = uniform
+
+  for (int bidx = 0; bidx < nblocks; bidx++) {
+    int gid = md->GetBlockGid(bidx);
+    tau::LogBlockEvent(gid, TAU_BLKEVT_US_CF, cf_time);
+  }
+
   return TaskStatus::complete;
 }
 

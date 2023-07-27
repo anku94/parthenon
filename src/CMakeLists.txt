@@ -11,6 +11,9 @@
 # the public, perform publicly and display publicly, and to permit others to do so.
 #=========================================================================================
 
+find_package(TAU MODULE)
+find_package(lb CONFIG)
+
 # Configure config.hpp
 set(PROBLEM_GENERATOR "<not-implemented>") # TODO: Figure out what to put here
 if (ENABLE_MPI)
@@ -180,6 +183,7 @@ add_library(parthenon
   outputs/parthenon_xdmf.cpp
   outputs/parthenon_hdf5.hpp
   outputs/parthenon_xdmf.hpp
+  outputs/tau_types.cpp
   outputs/restart.cpp
   outputs/vtk.cpp
 
@@ -224,6 +228,7 @@ add_library(parthenon
   utils/communication_buffer.hpp
   utils/cleantypes.hpp
   utils/concepts_lite.hpp
+  utils/debug_utils.cpp
   utils/error_checking.hpp
   utils/error_checking.cpp
   utils/hash.hpp
@@ -270,6 +275,16 @@ target_compile_definitions(parthenon PRIVATE
     FS_HEADER=<${CXX_FILESYSTEM_HEADER}>
     FS_NAMESPACE=${CXX_FILESYSTEM_NAMESPACE}
     )
+
+if (TAU_FOUND)
+  target_compile_definitions(parthenon PRIVATE TAUPROF_ENABLE)
+  target_link_libraries(parthenon PUBLIC TAU::TAU)
+endif()
+
+if (lb_FOUND)
+  target_compile_definitions(parthenon PRIVATE LB_ENABLE)
+  target_link_libraries(parthenon PRIVATE lb)
+endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "XL")
   target_compile_options(parthenon PUBLIC -std=c++1y -qxflag=disable__cplusplusOverride)

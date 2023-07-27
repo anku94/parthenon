@@ -20,8 +20,11 @@
 #include <vector>
 
 #include "basic_types.hpp"
+#include "interface/mesh_data.hpp"
 #include "interface/metadata.hpp"
 #include "interface/state_descriptor.hpp"
+#include "mesh/meshblock.hpp"
+#include "outputs/tau_types.h"
 #include "utils/error_checking.hpp"
 
 namespace parthenon {
@@ -441,6 +444,40 @@ StateDescriptor::CreateResolvedStateDescriptor(Packages_t &packages) {
   state->InvertControllerMap();
 
   return state;
+}
+
+void
+StateDescriptor::FillDerived(MeshBlockData<Real> *rc) const {
+  if (FillDerivedBlock != nullptr) {
+    double begin = tau::GetUsSince(0);
+
+    FillDerivedBlock(rc);
+
+    double fdb_time = tau::GetUsSince(begin);
+    tau::LogBlockEvent(rc->GetBlockPointer()->gid, TAU_BLKEVT_US_FD, fdb_time);
+
+    rc->GetBlockPointer()->AddCostForLoadBalancing(fdb_time);
+  }
+}
+
+void
+StateDescriptor::FillDerived(MeshData<Real> *rc) const {
+  if (FillDerivedMesh != nullptr) {
+    // std::string msg = "Profiling not implemented for this version of FillDerived";
+    // if (Globals::my_rank == 0) PARTHENON_WARN(msg);
+    double begin = tau::GetUsSince(0);
+
+    FillDerivedMesh(rc);
+
+    double fdm_time = tau::GetUsSince(begin);
+    int nblocks = rc->NumBlocks();
+    fdm_time /= nblocks;
+
+    for (int bidx = 0; bidx < nblocks; bidx++) {
+      int gid = rc->GetBlockGid(bidx);
+      tau::LogBlockEvent(gid, TAU_BLKEVT_US_FD, fdm_time);
+    }
+  }
 }
 
 } // namespace parthenon
