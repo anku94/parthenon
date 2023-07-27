@@ -76,9 +76,9 @@ static void GetParent(const LogicalLocation& loc, LogicalLocation& parent_loc, i
         parent_loc.lx2 = loc.lx2 >> 1;
         parent_loc.lx3 = loc.lx3 >> 1;
 
-        offset = ((loc.lx1 & 1LL) << 2)
+        offset = ((loc.lx3 & 1LL) << 2)
                 + ((loc.lx2 & 1LL) << 1)
-                + (loc.lx3 & 1LL);
+                + (loc.lx1 & 1LL);
   }
 
   static bool CompareParents(const LogicalLocation& left, const LogicalLocation& right) {
