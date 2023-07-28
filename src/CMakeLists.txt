@@ -11,9 +11,6 @@
 # the public, perform publicly and display publicly, and to permit others to do so.
 #=========================================================================================
 
-find_package(TAU MODULE)
-find_package(lb CONFIG)
-
 # Configure config.hpp
 set(PROBLEM_GENERATOR "<not-implemented>") # TODO: Figure out what to put here
 if (ENABLE_MPI)
@@ -270,7 +267,7 @@ target_compile_features(parthenon PUBLIC cxx_std_17)
 
 # This will automatically link any extra libraries (or no extra libraries)
 # depending on the compiler, so it doesn't require an if() statement
-target_link_libraries(parthenon PUBLIC std::filesystem)
+target_link_libraries(parthenon PRIVATE std::filesystem)
 target_compile_definitions(parthenon PRIVATE
     FS_HEADER=<${CXX_FILESYSTEM_HEADER}>
     FS_NAMESPACE=${CXX_FILESYSTEM_NAMESPACE}
@@ -300,7 +297,7 @@ if (ENABLE_OPENMP)
 endif()
 
 if (ENABLE_HDF5)
-  target_link_libraries(parthenon PUBLIC HDF5_C)
+  target_link_libraries(parthenon PUBLIC hdf5::hdf5)
 endif()
 
 # For Cuda with NVCC (<11.2) and C++17 Kokkos currently does not work/compile with

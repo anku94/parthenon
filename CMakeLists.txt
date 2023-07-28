@@ -176,14 +176,6 @@ if (NOT PARTHENON_DISABLE_HDF5)
       "degraded I/O performance.")
     endif()
   endif()
-
-  # HDF5 Interface library
-  add_library(HDF5_C INTERFACE)
-  target_link_libraries(HDF5_C INTERFACE ${HDF5_C_LIBRARIES})
-  target_compile_definitions(HDF5_C INTERFACE ${HDF5_C_DEFINITIONS})
-  target_include_directories(HDF5_C INTERFACE ${HDF5_C_INCLUDE_DIRS})
-
-  install(TARGETS HDF5_C EXPORT parthenonTargets)
 endif()
 
 # Kokkos recommendatation resulting in not using default GNU extensions
@@ -356,6 +348,10 @@ endif()
 if (PARTHENON_ENABLE_ASCENT)
   find_package(Ascent REQUIRED NO_DEFAULT_PATH)
 endif()
+
+find_package(pdlfs-common CONFIG)
+find_package(TAU MODULE)
+find_package(lb CONFIG)
 
 add_subdirectory(src)
 add_subdirectory(example)
