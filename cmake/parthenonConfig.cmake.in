@@ -30,6 +30,18 @@ if(${Kokkos_BUILT_WITH_CUDA})
   endif()
 endif()
 
+if (@pdlfs-common_FOUND@)
+  find_package(pdlfs-common CONFIG)
+endif()
+
+if (@TAU_FOUND@)
+  find_package(TAU MODULE)
+endif()
+
+if (@lb_FOUND@)
+  find_package(lb CONFIG)
+endif()
+
 if(@MPI_FOUND@)
   find_package(MPI REQUIRED COMPONENTS CXX)
 endif()

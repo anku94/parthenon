@@ -367,6 +367,10 @@ if (PARTHENON_ENABLE_ASCENT)
   find_package(Ascent REQUIRED NO_DEFAULT_PATH)
 endif()
 
+find_package(pdlfs-common CONFIG)
+find_package(TAU MODULE)
+find_package(lb CONFIG)
+
 add_subdirectory(src)
 add_subdirectory(example)
 add_subdirectory(benchmarks)
