@@ -291,7 +291,7 @@ if (ENABLE_OPENMP)
 endif()
 
 if (ENABLE_HDF5)
-  target_link_libraries(parthenon PUBLIC HDF5_C)
+  target_link_libraries(parthenon PUBLIC hdf5::hdf5)
 endif()
 
 # For Cuda with NVCC (<11.2) and C++17 Kokkos currently does not work/compile with

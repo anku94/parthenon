@@ -48,5 +48,8 @@ endif()
 if(@OpenMP_FOUND@)
   find_package(OpenMP REQUIRED COMPONENTS CXX)
 endif()
+if(@HDF5_FOUND@)
+  find_package(HDF5 COMPONENTS C)
+endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/parthenonTargets.cmake")
