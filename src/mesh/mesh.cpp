@@ -33,6 +33,8 @@
 #include <utility>
 #include <vector>
 
+#include <policy.h>
+
 #include "basic_types.hpp"
 #include "bvals/comms/bvals_in_one.hpp"
 #include "parthenon_mpi.hpp"
@@ -96,9 +98,9 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, Packages_t &packages,
       // private members:
       num_mesh_threads_(pin->GetOrAddInteger("parthenon/mesh", "num_threads", 1)),
       tree(this), use_uniform_meshgen_fn_{true, true, true, true}, lb_flag_(true),
-      lb_automatic_(),
-      lb_manual_(), MeshGenerator_{nullptr, UniformMeshGeneratorX1,
-                                   UniformMeshGeneratorX2, UniformMeshGeneratorX3},
+      lb_automatic_(), lb_manual_(),
+      MeshGenerator_{nullptr, UniformMeshGeneratorX1, UniformMeshGeneratorX2,
+                     UniformMeshGeneratorX3},
       MeshBndryFnctn{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr} {
   std::stringstream msg;
   RegionSize block_size;
@@ -493,7 +495,8 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, Packages_t &packages,
     int bid = myrblist[bidx];
     SetBlockSizeAndBoundaries(loclist[bid], block_size, block_bcs);
     // create a block and add into the link list
-    block_list[bidx] = MeshBlock::Make(bid, bidx, loclist[bid], block_size, block_bcs, this, pin, app_in,
+    block_list[bidx] =
+        MeshBlock::Make(bid, bidx, loclist[bid], block_size, block_bcs, this, pin, app_in,
                         packages, resolved_packages, gflag);
     block_list[bidx]->SearchAndSetNeighbors(tree, rblist, ranklist);
     gid_lid_map[bid] = bidx;
@@ -547,9 +550,9 @@ Mesh::Mesh(ParameterInput *pin, ApplicationInput *app_in, RestartReader &rr,
       // private members:
       num_mesh_threads_(pin->GetOrAddInteger("parthenon/mesh", "num_threads", 1)),
       tree(this), use_uniform_meshgen_fn_{true, true, true, true}, lb_flag_(true),
-      lb_automatic_(),
-      lb_manual_(), MeshGenerator_{nullptr, UniformMeshGeneratorX1,
-                                   UniformMeshGeneratorX2, UniformMeshGeneratorX3},
+      lb_automatic_(), lb_manual_(),
+      MeshGenerator_{nullptr, UniformMeshGeneratorX1, UniformMeshGeneratorX2,
+                     UniformMeshGeneratorX3},
       MeshBndryFnctn{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr} {
   std::stringstream msg;
   RegionSize block_size;
@@ -1141,7 +1144,7 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
       init_done = false;
       // caching nbtotal the private variable my be updated in the following function
       const int nb_before_loadbalance = nbtotal;
-      LoadBalancingAndAdaptiveMeshRefinement(pin, app_in);
+      LoadBalancingAndAdaptiveMeshRefinement(0, pin, app_in);
       if (nbtotal == nb_before_loadbalance) {
         init_done = true;
       } else if (nbtotal < nb_before_loadbalance && Globals::my_rank == 0) {
@@ -1296,6 +1299,11 @@ void Mesh::RegisterLoadBalancing_(ParameterInput *pin) {
   }
   lb_tolerance_ = pin->GetOrAddReal("parthenon/loadbalancing", "tolerance", 0.5);
   lb_interval_ = pin->GetOrAddInteger("parthenon/loadbalancing", "interval", 10);
+
+  const std::string policy_name = pin->GetOrAddString(
+      "parthenon/loadbalancing", "policy", "baseline",
+      std::vector<std::string>{"baseline", "lpt", "ci", "cdpp"});
+  Globals::lb_policy = amr::PolicyUtils::StringToPolicy(policy_name);
 #endif // MPI_PARALLEL
 }
 
@@ -1338,37 +1346,37 @@ void Mesh::SetupMPIComms() {
 }
 
 int Mesh::GetLid(std::vector<std::vector<int>> const &rblist,
-									std::vector<int> const &gid2rank, int gid) {
-	if (gid >= gid2rank.size()) {
-		std::stringstream msg;
-		msg << "### FATAL ERROR in GetLID" << std::endl
-				<< "GID > gid2rank.size() ( " << gid << ", " << gid2rank.size() << ")"
-				<< std::endl;
-		PARTHENON_FAIL(msg);
-		return -1;
-	}
+                 std::vector<int> const &gid2rank, int gid) {
+  if (gid >= gid2rank.size()) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in GetLID" << std::endl
+        << "GID > gid2rank.size() ( " << gid << ", " << gid2rank.size() << ")"
+        << std::endl;
+    PARTHENON_FAIL(msg);
+    return -1;
+  }
 
-	int rank = gid2rank[gid];
-	if (rank >= rblist.size()) {
-		std::stringstream msg;
-		msg << "### FATAL ERROR in GetLID" << std::endl
-				<< "rank >= rblist.size() ( " << rank << ", " << rblist.size() << ")"
-				<< std::endl;
-		PARTHENON_FAIL(msg);
-		return -1;
-	}
+  int rank = gid2rank[gid];
+  if (rank >= rblist.size()) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in GetLID" << std::endl
+        << "rank >= rblist.size() ( " << rank << ", " << rblist.size() << ")"
+        << std::endl;
+    PARTHENON_FAIL(msg);
+    return -1;
+  }
 
-	const std::vector<int> &v = rblist[rank];
-	auto it = std::find(v.begin(), v.end(), gid);
+  const std::vector<int> &v = rblist[rank];
+  auto it = std::find(v.begin(), v.end(), gid);
 
-	if (it == v.end()) {
-		std::stringstream msg;
-		msg << "### FATAL ERROR in GetLID" << std::endl
-				<< "GID " << gid << " could not be located (Rank: " << rank << ")" << std::endl;
-		PARTHENON_FAIL(msg);
-	}
+  if (it == v.end()) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in GetLID" << std::endl
+        << "GID " << gid << " could not be located (Rank: " << rank << ")" << std::endl;
+    PARTHENON_FAIL(msg);
+  }
 
-	int lid = it - v.begin();
-	return lid;
+  int lid = it - v.begin();
+  return lid;
 }
 } // namespace parthenon

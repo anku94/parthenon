@@ -1,6 +1,8 @@
-#include "tau_types.h"
+#include "tau_types.hpp"
 
 #include <time.h>
+
+#undef TAUPROF_ENABLE
 
 namespace tau {
 double GetUsSince(double since) {
@@ -54,13 +56,37 @@ void LogBlockEvent(int block_id, int opcode, int data) {
 #if TAUPROF_ENABLE == 1
   // fprintf(stderr, "LOG EVENT TIME\n");
 
-  MsgBlockEvent msg;
-  msg.block_id = block_id;
-  msg.opcode = opcode;
-  msg.data = data;
+  MsgBlockEvent msg{block_id, opcode, data};
 
   TriggerMsg tmsg;
   tmsg.type = MsgType::kBlockEvent;
+  tmsg.data = (void *)&msg;
+
+  TAU_TRIGGER(parthenon::Globals::tau_amr_module, (void *)&tmsg);
+#endif
+}
+
+void LogCommChannel(void *ptr, int block_id, int block_rank, int nbr_id, int nbr_rank,
+                    int tag, char is_flux) {
+#if TAUPROF_ENABLE == 1
+  // fprintf(stderr, "LOG EVENT TIME\n");
+
+  MsgCommChannel msg{ptr, block_id, block_rank, nbr_id, nbr_rank, tag, is_flux};
+
+  TriggerMsg tmsg;
+  tmsg.type = MsgType::kCommChannel;
+  tmsg.data = (void *)&msg;
+
+  TAU_TRIGGER(parthenon::Globals::tau_amr_module, (void *)&tmsg);
+#endif
+}
+
+void LogMsgSend(void *ptr, int buf_sz, int recv_rank, int tag, uint64_t timestamp) {
+#if TAUPROF_ENABLE == 1
+  MsgSend msg{ptr, buf_sz, recv_rank, tag, timestamp};
+
+  TriggerMsg tmsg;
+  tmsg.type = MsgType::kMsgSend;
   tmsg.data = (void *)&msg;
 
   TAU_TRIGGER(parthenon::Globals::tau_amr_module, (void *)&tmsg);

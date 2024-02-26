@@ -69,6 +69,14 @@ TaskStatus SetFluxCorrections(std::shared_ptr<MeshData<Real>> &md);
 TaskID AddBoundaryExchangeTasks(TaskID dependency, TaskList &tl,
                                 std::shared_ptr<MeshData<Real>> &md, bool multilevel);
 
+// Adds all relevant boundary communication to a single task list
+TaskID AddBoundarySendTasks(TaskID dependency, TaskList &tl,
+                                std::shared_ptr<MeshData<Real>> &md, bool multilevel);
+
+// Adds all relevant boundary communication to a single task list
+TaskID AddBoundaryRecvTasks(TaskID dependency, TaskList &tl,
+                                std::shared_ptr<MeshData<Real>> &md, bool multilevel);
+
 // This task should not be called in down stream code
 TaskStatus BuildBoundaryBuffers(std::shared_ptr<MeshData<Real>> &md);
 

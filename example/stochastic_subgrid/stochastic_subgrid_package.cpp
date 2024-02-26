@@ -282,6 +282,9 @@ TaskStatus ComputeNumIter(std::shared_ptr<MeshData<Real>> &md, Packages_t &packa
 
 // this is the package registered function to fill derived
 void DoLotsOfWork(MeshBlockData<Real> *rc) {
+  Kokkos::Profiling::pushRegion("Task_DoLotsOfWork");
+  double _ts_beg = tau::GetUsSince(0);
+
   auto pmb = rc->GetBlockPointer();
   auto pkg = pmb->packages.Get("stochastic_subgrid_package");
 
@@ -314,7 +317,7 @@ void DoLotsOfWork(MeshBlockData<Real> *rc) {
           Kokkos::atomic_increment(&hist(num_iter - N_min));
         }
 
-        for (int r = 0; r < num_iter; ++r) {
+        for (int r = 0; r < num_iter * 100; ++r) {
           Real odd = 0.0;
           Real even = 0.0;
 
@@ -326,6 +329,12 @@ void DoLotsOfWork(MeshBlockData<Real> *rc) {
           v(out, k, j, i) += log(a * b) * ilog10 / (log(a) * ilog10 + log(b) * ilog10);
         }
       });
+
+  double work_time = tau::GetUsSince(_ts_beg);
+  tau::LogBlockEvent(pmb->gid, TAU_BLKEVT_US_FD, work_time);
+  pmb->AddCostForLoadBalancing(work_time);
+
+  Kokkos::Profiling::popRegion(); // Task_DoLotsOfWork
 }
 
 // provide the routine that estimates a stable timestep for this package
@@ -364,6 +373,8 @@ Real EstimateTimestepBlock(MeshBlockData<Real> *rc) {
 // some field "advected" that we are pushing around.
 // This routine implements all the "physics" in this example
 TaskStatus CalculateFluxes(std::shared_ptr<MeshBlockData<Real>> &rc) {
+  double _ts_beg = tau::GetUsSince(0);
+
   Kokkos::Profiling::pushRegion("Task_Advection_CalculateFluxes");
   auto pmb = rc->GetBlockPointer();
   const IndexRange ib = pmb->cellbounds.GetBoundsI(IndexDomain::interior);
@@ -468,6 +479,10 @@ TaskStatus CalculateFluxes(std::shared_ptr<MeshBlockData<Real>> &rc) {
   }
 
   Kokkos::Profiling::popRegion(); // Task_Advection_CalculateFluxes
+  double cf_time = tau::GetUsSince(_ts_beg);
+  tau::LogBlockEvent(pmb->gid, TAU_BLKEVT_US_CF, cf_time);
+  pmb->AddCostForLoadBalancing(cf_time);
+
   return TaskStatus::complete;
 }
 

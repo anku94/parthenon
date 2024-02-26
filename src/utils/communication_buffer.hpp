@@ -27,6 +27,7 @@
 
 #include "globals.hpp"
 #include "parthenon_mpi.hpp"
+#include "outputs/tau_types.hpp"
 #include "utils/mpi_types.hpp"
 
 namespace parthenon {
@@ -212,6 +213,7 @@ void CommBuffer<T>::Send() noexcept {
 // Make sure that this request isn't still out,
 // this could be blocking
 #ifdef MPI_PARALLEL
+    tau::LogMsgSend(this, buf_.size(), recv_rank_, tag_, (uint64_t)tau::GetUsSince(0));
     PARTHENON_REQUIRE(
         buf_.size() > 0,
         "Trying to send zero size buffer, which will be interpreted as sending_null.");

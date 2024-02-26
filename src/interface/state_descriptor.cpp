@@ -24,7 +24,7 @@
 #include "interface/metadata.hpp"
 #include "interface/state_descriptor.hpp"
 #include "mesh/meshblock.hpp"
-#include "outputs/tau_types.h"
+#include "outputs/tau_types.hpp"
 #include "utils/error_checking.hpp"
 
 namespace parthenon {

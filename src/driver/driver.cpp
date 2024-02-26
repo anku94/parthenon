@@ -99,7 +99,7 @@ DriverStatus EvolutionDriver::Execute() {
     pmesh->step_since_lb++;
 
     timer_LBandAMR.reset();
-    pmesh->LoadBalancingAndAdaptiveMeshRefinement(pinput, app_input);
+    pmesh->LoadBalancingAndAdaptiveMeshRefinement(tm.ncycle, pinput, app_input);
     if (pmesh->modified) InitializeBlockTimeStepsAndBoundaries();
     time_LBandAMR += timer_LBandAMR.seconds();
     SetGlobalTimeStep();

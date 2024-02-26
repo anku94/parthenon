@@ -344,4 +344,21 @@ TaskID AddBoundaryExchangeTasks(TaskID dependency, TaskList &tl,
 
   return set;
 }
+
+TaskID AddBoundarySendTasks(TaskID dependency, TaskList &tl,
+                                std::shared_ptr<MeshData<Real>> &md, bool multilevel) {
+  const auto any = BoundaryType::any;
+  // XXX: interleave recvs with sends???
+  auto start_recv = tl.AddTask(dependency, StartReceiveBoundBufs<any>, md);
+  auto send = tl.AddTask(dependency, SendBoundBufs<any>, md);
+  return send;
+}
+
+TaskID AddBoundaryRecvTasks(TaskID dependency, TaskList &tl,
+                                std::shared_ptr<MeshData<Real>> &md, bool multilevel) {
+  const auto any = BoundaryType::any;
+  auto recv = tl.AddTask(dependency, ReceiveBoundBufs<any>, md);
+  auto set = tl.AddTask(recv, SetBounds<any>, md);
+  return set;
+}
 } // namespace parthenon

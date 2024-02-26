@@ -31,6 +31,7 @@
 #include "mesh/mesh.hpp"
 #include "mesh/mesh_refinement.hpp"
 #include "mesh/meshblock.hpp"
+#include "outputs/tau_types.hpp"
 #include "utils/error_checking.hpp"
 #include "utils/loop_utils.hpp"
 
@@ -72,10 +73,15 @@ void BuildBoundaryBufferSubset(std::shared_ptr<MeshData<Real>> &md,
 #ifdef MPI_PARALLEL
     // Get a bi-directional mpi tag for this pair of blocks
     tag = pmesh->tag_map.GetTag(pmb, nb);
+
     auto comm_label = v->label();
+    char flx_tag = 0;
     if constexpr (BTYPE == BoundaryType::flxcor_send ||
-                  BTYPE == BoundaryType::flxcor_recv)
+                  BTYPE == BoundaryType::flxcor_recv) {
       comm_label += "_flcor";
+      flx_tag = 1;
+    }
+
     mpi_comm_t comm = pmesh->GetMPIComm(comm_label);
 #else
       // Setting to zero is fine here since this doesn't actually get used when everything
@@ -95,6 +101,9 @@ void BuildBoundaryBufferSubset(std::shared_ptr<MeshData<Real>> &md,
                               "Two communication buffers have the same key.");
       buf_map[s_key] = CommBuffer<buf_pool_t<Real>::owner_t>(
           tag, sender_rank, receiver_rank, comm, get_resource_method, use_sparse_buffers);
+
+      void* ptr = &buf_map[s_key];
+      tau::LogCommChannel(ptr, pmb->gid, sender_rank, nb.snb.gid, receiver_rank, tag, flx_tag);
     }
 
     // Also build the non-local receive buffers here

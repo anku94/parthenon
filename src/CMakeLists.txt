@@ -128,6 +128,7 @@ add_library(parthenon
   interface/data_collection.cpp
   interface/data_collection.hpp
   interface/mesh_data.hpp
+  interface/mesh_data.cpp
   interface/meshblock_data.cpp
   interface/meshblock_data.hpp
   interface/swarm_container.cpp
@@ -180,6 +181,7 @@ add_library(parthenon
   outputs/parthenon_xdmf.cpp
   outputs/parthenon_hdf5.hpp
   outputs/parthenon_xdmf.hpp
+  outputs/tau_types.hpp
   outputs/tau_types.cpp
   outputs/restart.cpp
   outputs/vtk.cpp

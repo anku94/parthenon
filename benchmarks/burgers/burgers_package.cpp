@@ -23,7 +23,7 @@
 #include "kokkos_abstraction.hpp"
 #include "parthenon/package.hpp"
 #include "reconstruct/dc_inline.hpp"
-#include "outputs/tau_types.h"
+#include "outputs/tau_types.hpp"
 #include "utils/error_checking.hpp"
 
 #include "burgers_package.hpp"

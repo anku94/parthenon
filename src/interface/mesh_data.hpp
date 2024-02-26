@@ -230,10 +230,13 @@ class MeshData {
     const int nblocks = blocks.size();
     block_data_.resize(nblocks);
     block_gids_.resize(nblocks);
+    block_lids_.resize(nblocks);
+
     SetMeshPointer(blocks[0]->pmy_mesh);
     for (int i = 0; i < nblocks; i++) {
       block_data_[i] = blocks[i]->meshblock_data.Get(name);
       block_gids_[i] = blocks[i]->gid;
+      block_lids_[i] = blocks[i]->lid;
     }
   }
 
@@ -242,12 +245,16 @@ class MeshData {
     if (src.get() == nullptr) {
       PARTHENON_THROW("src points at null");
     }
+
     const int nblocks = src->NumBlocks();
     block_data_.resize(nblocks);
     block_gids_.resize(nblocks);
+    block_lids_.resize(nblocks);
+
     for (int i = 0; i < nblocks; i++) {
       block_data_[i]->Copy(src->GetBlockData(i), std::forward<Args>(args)...);
       block_gids_[i] = src->block_gids_[i];
+      block_lids_[i] = src->block_lids_[i];
     }
   }
 
@@ -400,6 +407,7 @@ class MeshData {
     sparse_pack_cache_.clear();
     block_data_.clear();
     block_gids_.clear();
+    block_lids_.clear();
     varPackMap_.clear();
     varFluxPackMap_.clear();
     bvars_cache_.clear();
@@ -431,10 +439,13 @@ class MeshData {
     return block_gids_[i];
   }
 
+  void AddBlockCost(int block_idx, double cost);
+
  private:
   Mesh *pmy_mesh_;
   BlockDataList_t<T> block_data_;
   std::vector<int> block_gids_;
+  std::vector<int> block_lids_;
   std::string stage_name_;
 
   // caches for packs

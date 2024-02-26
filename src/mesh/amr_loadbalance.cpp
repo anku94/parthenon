@@ -29,8 +29,8 @@
 #include <string>
 #include <tuple>
 
-#include <policy.h>
 #include <lb_policies.h>
+#include <policy.h>
 
 #include "parthenon_mpi.hpp"
 
@@ -42,8 +42,8 @@
 #include "mesh/mesh_refinement.hpp"
 #include "mesh/meshblock.hpp"
 #include "mesh/meshblock_tree.hpp"
+#include "outputs/tau_types.hpp"
 #include "parthenon_arrays.hpp"
-#include "outputs/tau_types.h"
 #include "utils/buffer_utils.hpp"
 #include "utils/error_checking.hpp"
 
@@ -53,13 +53,12 @@ namespace parthenon {
 // \!fn void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin)
 // \brief Main function for adaptive mesh refinement
 
-void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin,
+void Mesh::LoadBalancingAndAdaptiveMeshRefinement(int ncycles_over, ParameterInput *pin,
                                                   ApplicationInput *app_in) {
   Kokkos::Profiling::pushRegion("LoadBalancingAndAdaptiveMeshRefinement");
 
-
   int bidx = 0;
-  for (auto& pmb : block_list)  {
+  for (auto &pmb : block_list) {
     tau::LogBlockEvent(pmb->gid, TAU_BLKEVT_RANK_GID, bidx++);
   }
 
@@ -76,18 +75,31 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin,
   UpdateCostList();
 
   modified = false;
-  if (nnew != 0 || ndel != 0) { // at least one (de)refinement happened
+
+  // to force pack size == 1 in athena_pk
+  if (ncycles_over == 1) {
+    if (Globals::my_rank == 0) {
+      std::cout << "[ALERT] Changing pack size to 1. Prev: " << default_pack_size_ << std::endl;
+    }
+
+    default_pack_size_ = 1;
     GatherCostListAndCheckBalance();
-    RedistributeAndRefineMeshBlocks(pin, app_in, nbtotal + nnew - ndel);
+    RedistributeAndRefineMeshBlocks(pin, app_in, nbtotal);
     modified = true;
-  } else if (lb_flag_ && step_since_lb >= lb_interval_) {
-    // if (!GatherCostListAndCheckBalance()) { // load imbalance detected
+  } else {
+    if (nnew != 0 || ndel != 0) { // at least one (de)refinement happened
+      GatherCostListAndCheckBalance();
+      RedistributeAndRefineMeshBlocks(pin, app_in, nbtotal + nnew - ndel);
+      modified = true;
+    } else if (lb_flag_ && step_since_lb >= lb_interval_) {
+      // if (!GatherCostListAndCheckBalance()) { // load imbalance detected
       // XXX AJ: R&R completely at the interval
       GatherCostListAndCheckBalance();
       RedistributeAndRefineMeshBlocks(pin, app_in, nbtotal);
       modified = true;
-    // }
-    lb_flag_ = false;
+      // }
+      lb_flag_ = false;
+    }
   }
 
   // gid = -1 denotes end of LBandAMR
@@ -133,8 +145,8 @@ void AssignBlocks(std::vector<double> const &costlist, std::vector<int> &ranklis
   }
 }
 
-void UpdateBlockList(std::vector<int> const &ranklist, 
-    std::vector<std::vector<int>> &rblist, std::vector<int> &nblist) {
+void UpdateBlockList(std::vector<int> const &ranklist,
+                     std::vector<std::vector<int>> &rblist, std::vector<int> &nblist) {
   rblist.resize(Globals::nranks);
   nblist.resize(Globals::nranks);
 
@@ -167,19 +179,16 @@ void Mesh::CalculateLoadBalance(std::vector<double> const &costlist,
   double const mincost = min_max.first == costlist.begin() ? 0.0 : *min_max.first;
   double const maxcost = min_max.second == costlist.begin() ? 0.0 : *min_max.second;
 
-  // Assigns blocks to ranks on a rougly cost-equal basis.
-#define POLICY kPolicyContiguousUnitCost
-#define STR_(x) #x
-#define STR(x) STR_(x)
-#define POLICY_STR STR(POLICY)
-
   if (Globals::my_rank == 0) {
-    // std::cout << "[LB] kPolicyLPT being invoked!" << std::endl;
-    std::cout << "[LB] " POLICY_STR " being invoked!" << std::endl;
+    std::cout << "[LB] " << amr::PolicyUtils::PolicyToString(Globals::lb_policy) << " being invoked!" << std::endl;
   }
 
-  amr::LoadBalancePolicies::AssignBlocks(amr::LoadBalancePolicy::POLICY, costlist, ranklist, Globals::nranks);
-  // AssignBlocks(costlist, ranklist);
+  // if (ncycles_over == 1) {
+    // AssignBlocks(costlist, ranklist);
+  // } else {
+    amr::LoadBalancePolicies::AssignBlocks(Globals::lb_policy, costlist,
+  ranklist, Globals::nranks, nullptr);
+  // }
 
   // Updates nslist with the ID of the starting block on each rank and the count of blocks
   // on each rank.
@@ -448,7 +457,7 @@ bool Mesh::GatherCostListAndCheckBalance() {
     }
     avecost /= Globals::nranks;
 
-		// Copy costlist_ro back to Mesh::costlist
+    // Copy costlist_ro back to Mesh::costlist
     // Currently copying the full costlist.
     // Possible that only inner loop for ridx == Global::my_rank is needed
 
@@ -475,6 +484,8 @@ bool Mesh::GatherCostListAndCheckBalance() {
 
 void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput *app_in,
                                            int ntot) {
+  auto _ts_beg = tau::GetUsSince(0);
+
   Kokkos::Profiling::pushRegion("RedistributeAndRefineMeshBlocks");
   // kill any cached packs
   mesh_data.PurgeNonBase();
@@ -531,7 +542,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
   // store old nbstart and nbend before load balancing in Step 2.
   std::vector<int> omyrblist(nblist[Globals::my_rank]);
   std::copy(rblist[Globals::my_rank].begin(), rblist[Globals::my_rank].end(),
-      omyrblist.begin());
+            omyrblist.begin());
 #endif
   Kokkos::Profiling::popRegion(); // Step 1
 
@@ -792,8 +803,8 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
         SetBlockSizeAndBoundaries(newloc[n], block_size, block_bcs);
         // append new block to list of MeshBlocks
         new_block_list[nidx] =
-            MeshBlock::Make(n, nidx, newloc[n], block_size, block_bcs, this, pin,
-                            app_in, packages, resolved_packages, gflag);
+            MeshBlock::Make(n, nidx, newloc[n], block_size, block_bcs, this, pin, app_in,
+                            packages, resolved_packages, gflag);
         // fill the conservative variables
         if ((loclist[on].level > newloc[n].level)) { // fine to coarse (f2c)
           for (int ll = 0; ll < nleaf; ll++) {
@@ -821,8 +832,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
               new_block_list[nidx]->AllocateSparse(var->label());
             }
           }
-          FillSameRankCoarseToFineAMR(pob.get(), new_block_list[nidx].get(),
-                                      newloc[n]);
+          FillSameRankCoarseToFineAMR(pob.get(), new_block_list[nidx].get(), newloc[n]);
         }
       }
     }
@@ -929,6 +939,9 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
   ResetLoadBalanceVariables();
 
   Kokkos::Profiling::popRegion(); // RedistributeAndRefineMeshBlocks
+                                  //
+  auto _rnr_time = tau::GetUsSince(_ts_beg);
+  tau::LogBlockEvent(-1, TAU_BLKEVT_US_COMP3, _rnr_time);
 }
 
 // AMR: step 6, branch 1 (same2same: just pack+send)

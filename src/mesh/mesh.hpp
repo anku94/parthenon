@@ -115,7 +115,7 @@ class Mesh {
   void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                  BoundaryFlag *block_bcs);
   void OutputCycleDiagnostics();
-  void LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin,
+  void LoadBalancingAndAdaptiveMeshRefinement(int ncycles_over, ParameterInput *pin,
                                               ApplicationInput *app_in);
   int DefaultPackSize() {
     return default_pack_size_ < 1 ? block_list.size() : default_pack_size_;

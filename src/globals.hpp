@@ -19,6 +19,9 @@
 //! \file globals.hpp
 //  \brief namespace containing external global variables
 
+#include <lb_policies.h>
+#include <policy.h>
+
 #include "basic_types.hpp"
 
 namespace parthenon {
@@ -37,6 +40,8 @@ struct SparseConfig {
 
 extern int my_rank, nranks, nghost;
 extern size_t tau_amr_module;
+
+extern amr::LoadBalancePolicy lb_policy;
 
 extern SparseConfig sparse_config;
 
