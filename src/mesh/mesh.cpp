@@ -1302,7 +1302,7 @@ void Mesh::RegisterLoadBalancing_(ParameterInput *pin) {
 
   const std::string policy_name = pin->GetOrAddString(
       "parthenon/loadbalancing", "policy", "baseline",
-      std::vector<std::string>{"baseline", "lpt", "ci", "cdpp"});
+      std::vector<std::string>{"baseline", "lpt", "ci", "cdpp", "hybrid"});
   Globals::lb_policy = amr::PolicyUtils::StringToPolicy(policy_name);
 #endif // MPI_PARALLEL
 }
