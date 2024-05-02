@@ -79,7 +79,8 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(int ncycles_over, ParameterInp
   // to force pack size == 1 in athena_pk
   if (ncycles_over == 1) {
     if (Globals::my_rank == 0) {
-      std::cout << "[ALERT] Changing pack size to 1. Prev: " << default_pack_size_ << std::endl;
+      std::cout << "[ALERT] Changing pack size to 1. Prev: " << default_pack_size_
+                << std::endl;
     }
 
     default_pack_size_ = 1;
@@ -180,14 +181,14 @@ void Mesh::CalculateLoadBalance(std::vector<double> const &costlist,
   double const maxcost = min_max.second == costlist.begin() ? 0.0 : *min_max.second;
 
   if (Globals::my_rank == 0) {
-    std::cout << "[LB] " << amr::PolicyUtils::PolicyToString(Globals::lb_policy) << " being invoked!" << std::endl;
+    std::cout << "[LB] " << Globals::lb_policy << " being invoked!" << std::endl;
   }
 
   // if (ncycles_over == 1) {
-    // AssignBlocks(costlist, ranklist);
+  // AssignBlocks(costlist, ranklist);
   // } else {
-    amr::LoadBalancePolicies::AssignBlocks(Globals::lb_policy, costlist,
-  ranklist, Globals::nranks, nullptr);
+  amr::LoadBalancePolicies::AssignBlocks(Globals::lb_policy.c_str(), costlist, ranklist,
+                                         Globals::nranks);
   // }
 
   // Updates nslist with the ID of the starting block on each rank and the count of blocks
@@ -446,6 +447,7 @@ bool Mesh::GatherCostListAndCheckBalance() {
                                        MPI_DOUBLE, MPI_COMM_WORLD));
 #endif
     double maxcost = 0.0, avecost = 0.0;
+    double mincost = 1e100;
     for (int rank = 0; rank < Globals::nranks; rank++) {
       double rcost = 0.0;
       int ns = nslist_loc[rank];
@@ -454,8 +456,14 @@ bool Mesh::GatherCostListAndCheckBalance() {
         rcost += costlist_loc[n];
       maxcost = std::max(maxcost, rcost);
       avecost += rcost;
+      mincost = std::min(mincost, rcost);
     }
     avecost /= Globals::nranks;
+
+    if (Globals::my_rank == 0) {
+      fprintf(stdout, "[LB] Max: %.1f Avg: %.1f Min: %.1f\n", maxcost / 1e6,
+              avecost / 1e6, mincost / 1e6);
+    }
 
     // Copy costlist_ro back to Mesh::costlist
     // Currently copying the full costlist.

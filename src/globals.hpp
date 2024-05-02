@@ -41,7 +41,7 @@ struct SparseConfig {
 extern int my_rank, nranks, nghost;
 extern size_t tau_amr_module;
 
-extern amr::LoadBalancePolicy lb_policy;
+extern std::string lb_policy;
 
 extern SparseConfig sparse_config;
 

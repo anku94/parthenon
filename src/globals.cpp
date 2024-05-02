@@ -33,7 +33,7 @@ int nghost;
 int my_rank; // MPI rank of this process
 int nranks;  // total number of MPI ranks
 size_t tau_amr_module; // identifier for the TAU trigger plugin
-amr::LoadBalancePolicy lb_policy; // load balance policy
+std::string lb_policy;
 
 // sparse configuration values that are needed in various places
 SparseConfig sparse_config;
