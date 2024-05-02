@@ -60,6 +60,8 @@ option(TEST_INTEL_OPTIMIZATION "Test intel optimization and vectorization" OFF)
 option(TEST_ERROR_CHECKING "Enables the error checking unit test. This test will FAIL" OFF)
 option(CODE_COVERAGE "Enable code coverage reporting" OFF)
 
+option(PARTHENON_ENABLE_TAU "Enable linking with the TAU library" OFF)
+
 include(cmake/Format.cmake)
 include(cmake/Lint.cmake)
 
@@ -349,8 +351,11 @@ if (PARTHENON_ENABLE_ASCENT)
   find_package(Ascent REQUIRED NO_DEFAULT_PATH)
 endif()
 
+if (PARTHENON_ENABLE_TAU)
+  find_package(TAU MODULE)
+endif()
+
 find_package(pdlfs-common CONFIG)
-find_package(TAU MODULE)
 find_package(lb CONFIG)
 
 add_subdirectory(src)
