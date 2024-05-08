@@ -1,5 +1,7 @@
 #include "debug_utils.hpp"
 
+#include <stdarg.h>
+
 #include "globals.hpp"
 
 namespace parthenon {
