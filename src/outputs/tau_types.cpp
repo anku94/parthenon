@@ -2,7 +2,7 @@
 
 #include <time.h>
 
-#define TAUPROF_ENABLE 1
+// #define TAUPROF_ENABLE 1
 
 namespace tau {
 double GetUsSince(double since) {
