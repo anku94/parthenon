@@ -16,10 +16,12 @@
 
 #include <parthenon/package.hpp>
 
+#include "Kokkos_Random.hpp"
 #include "config.hpp"
 #include "defs.hpp"
 #include "stochastic_subgrid_driver.hpp"
 #include "stochastic_subgrid_package.hpp"
+#include "utils/alias_method.hpp"
 #include "utils/error_checking.hpp"
 
 using namespace parthenon::package::prelude;
@@ -34,6 +36,8 @@ namespace stochastic_subgrid_example {
 void ProblemGenerator(MeshBlock *pmb, ParameterInput *pin) {
   auto &rc = pmb->meshblock_data.Get();
   auto &q = rc->Get("advected").data;
+
+  auto &ni = rc->Get("num_iter").data;
 
   auto pkg = pmb->packages.Get("stochastic_subgrid_package");
   const auto &amp = pkg->Param<Real>("amp");
@@ -83,6 +87,30 @@ void ProblemGenerator(MeshBlock *pmb, ParameterInput *pin) {
     }
   }
   q.DeepCopy(q_h);
+
+  const auto &pool =
+      pkg->Param<Kokkos::Random_XorShift64_Pool<parthenon::HostExecSpace>>("random_pool");
+
+  auto alias = pkg->Param<AliasMethod::AliasMethod>("alias_method");
+  int N_min = pkg->Param<int>("N_min");
+  auto rng = pool.get_state();
+  double rand1 = rng.drand();
+  double rand2 = rng.drand();
+  pool.free_state(rng);
+
+  int num_iter = N_min + alias.Sample(rand1, rand2);
+
+  // fprintf(stderr, "Rank: %d, bid: %d, num_iter: %d\n", Globals::my_rank, pmb->gid, num_iter);
+
+  auto ni_h = ni.GetHostMirror();
+  for (int k = kb.s; k <= kb.e; k++) {
+    for (int j = jb.s; j <= jb.e; j++) {
+      for (int i = ib.s; i <= ib.e; i++) {
+        ni_h(k, j, i) = num_iter;
+      }
+    }
+  }
+  ni.DeepCopy(ni_h);
 }
 
 //========================================================================================

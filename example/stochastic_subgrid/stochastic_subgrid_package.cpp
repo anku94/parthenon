@@ -12,6 +12,7 @@
 //========================================================================================
 
 #include "stochastic_subgrid_package.hpp"
+#include "stochastic_subgrid_utils.hpp"
 
 #include <algorithm>
 #include <chrono> // NOLINT [build/c++11]
@@ -180,7 +181,7 @@ std::shared_ptr<StateDescriptor> Initialize(ParameterInput *pin) {
     if (seed == 0)
       seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
-    Kokkos::Random_XorShift64_Pool<parthenon::DevExecSpace> rand_pool(seed);
+    Kokkos::Random_XorShift64_Pool<parthenon::HostExecSpace> rand_pool(seed + parthenon::Globals::my_rank);
     pkg->AddParam("random_pool", rand_pool);
   }
 
@@ -200,7 +201,7 @@ std::shared_ptr<StateDescriptor> Initialize(ParameterInput *pin) {
     pkg->AddField(field_name, m);
 
     field_name = "num_iter";
-    m = Metadata({Metadata::Cell, Metadata::Derived, Metadata::OneCopy});
+    m = Metadata({Metadata::Cell, Metadata::Derived, Metadata::OneCopy, Metadata::ForceRemeshComm, Metadata::FillGhost});
     pkg->AddField(field_name, m);
   }
 
@@ -271,9 +272,6 @@ TaskStatus ComputeNumIter(std::shared_ptr<MeshData<Real>> &md, Packages_t &packa
         double rand1 = rng.drand();
         double rand2 = rng.drand();
         pool.free_state(rng);
-
-        int num_iter = N_min + alias.Sample(rand1, rand2);
-        pack(b, v, k, j, i) = num_iter;
       });
 
   Kokkos::Profiling::popRegion(); // Task_ComputeNumIter
@@ -317,7 +315,8 @@ void DoLotsOfWork(MeshBlockData<Real> *rc) {
           Kokkos::atomic_increment(&hist(num_iter - N_min));
         }
 
-        for (int r = 0; r < num_iter * 100; ++r) {
+
+        for (int r = 0; r < num_iter; ++r) {
           Real odd = 0.0;
           Real even = 0.0;
 
