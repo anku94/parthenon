@@ -19,9 +19,6 @@
 //! \file globals.hpp
 //  \brief namespace containing external global variables
 
-#include <lb_policies.h>
-#include <policy.h>
-
 #include "basic_types.hpp"
 
 namespace parthenon {
