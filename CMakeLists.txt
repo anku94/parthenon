@@ -19,6 +19,7 @@ cmake_minimum_required(VERSION 3.16)
 
 # Imports machine-specific configuration
 include(cmake/MachineCfg.cmake)
+include(GNUInstallDirs)
 
 project(parthenon VERSION 0.8.0 LANGUAGES C CXX)
 
