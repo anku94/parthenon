@@ -94,7 +94,8 @@ set(COORDINATE_TYPE UniformCartesian) # TODO: Make this an option when more are 
 
 configure_file(config.hpp.in generated/config.hpp @ONLY)
 
-add_library(parthenon
+# add_library(parthenon
+set(PARTHENON_SRCS
   bvals/comms/bvals_in_one.hpp
   bvals/comms/bvals_utils.hpp
   bvals/comms/build_boundary_buffers.cpp
@@ -261,6 +262,13 @@ add_library(parthenon
   parthenon_manager.hpp
   parthenon_mpi.hpp
 )
+
+if (PARTHENON_BUILD_SHARED)
+  add_library(parthenon SHARED ${PARTHENON_SRCS})
+else() 
+  add_library(parthenon STATIC ${PARTHENON_SRCS})
+endif()
+
 add_library(Parthenon::parthenon ALIAS parthenon)
 
 set_target_properties(parthenon PROPERTIES SOVERSION ${parthenon_VERSION})
@@ -337,6 +345,11 @@ target_include_directories(parthenon PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/parthenon>
   )
+
+if (NOT PARTHENON_INSTALL)
+  message(STATUS "Skipping installation of Parthenon library")
+  return()
+endif()
 
 install(TARGETS parthenon EXPORT parthenonTargets
   INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/parthenon"
