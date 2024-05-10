@@ -24,4 +24,6 @@ if( "stochastic_subgrid-example" IN_LIST DRIVER_LIST OR NOT PARTHENON_DISABLE_EX
   )
   target_link_libraries(stochastic_subgrid-example PRIVATE Parthenon::parthenon)
   lint_target(stochastic_subgrid-example)
+
+  install(TARGETS stochastic_subgrid-example DESTINATION bin)
 endif()
