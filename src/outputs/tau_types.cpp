@@ -13,7 +13,7 @@ double GetUsSince(double since) {
 }
 
 void LogBlockAssignment(std::vector<double> const &costlist, std::vector<int> &ranklist) {
-#if TAUPROF_ENABLE == 1
+#ifdef TAUPROF_ENABLE
   MsgBlockAssignment msg;
   msg.costlist = &costlist;
   msg.ranklist = &ranklist;
@@ -30,7 +30,7 @@ void LogBlockAssignment(std::vector<double> const &costlist, std::vector<int> &r
 }
 
 void LogTargetCost(double cost) {
-#if TAUPROF_ENABLE == 1
+#ifdef TAUPROF_ENABLE
   TriggerMsg tmsg;
   tmsg.type = MsgType::kTargetCost;
   tmsg.data = (void *)&cost;
@@ -43,7 +43,7 @@ void LogTargetCost(double cost) {
 }
 
 void MarkTimestepEnd() {
-#if TAUPROF_ENABLE == 1
+#ifdef TAUPROF_ENABLE
   TriggerMsg tmsg;
   tmsg.type = MsgType::kTsEnd;
   tmsg.data = nullptr;
@@ -53,7 +53,7 @@ void MarkTimestepEnd() {
 }
 
 void LogBlockEvent(int block_id, int opcode, int data) {
-#if TAUPROF_ENABLE == 1
+#ifdef TAUPROF_ENABLE
   // fprintf(stderr, "LOG EVENT TIME\n");
 
   MsgBlockEvent msg{block_id, opcode, data};
@@ -68,7 +68,7 @@ void LogBlockEvent(int block_id, int opcode, int data) {
 
 void LogCommChannel(void *ptr, int block_id, int block_rank, int nbr_id, int nbr_rank,
                     int tag, char is_flux) {
-#if TAUPROF_ENABLE == 1
+#ifdef TAUPROF_ENABLE
   // fprintf(stderr, "LOG EVENT TIME\n");
 
   MsgCommChannel msg{ptr, block_id, block_rank, nbr_id, nbr_rank, tag, is_flux};
@@ -82,7 +82,7 @@ void LogCommChannel(void *ptr, int block_id, int block_rank, int nbr_id, int nbr
 }
 
 void LogMsgSend(void *ptr, int buf_sz, int recv_rank, int tag, uint64_t timestamp) {
-#if TAUPROF_ENABLE == 1
+#ifdef TAUPROF_ENABLE
   MsgSend msg{ptr, buf_sz, recv_rank, tag, timestamp};
 
   TriggerMsg tmsg;

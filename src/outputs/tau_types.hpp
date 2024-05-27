@@ -3,8 +3,6 @@
 #include "globals.hpp"
 #include <vector>
 
-#undef TAUPROF_ENABLE
-
 #ifdef TAUPROF_ENABLE
 #include <Profile/TauPluginTypes.h>
 #include <TAU.h>

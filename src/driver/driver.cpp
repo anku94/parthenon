@@ -103,6 +103,7 @@ DriverStatus EvolutionDriver::Execute() {
     if (pmesh->modified) InitializeBlockTimeStepsAndBoundaries();
     time_LBandAMR += timer_LBandAMR.seconds();
     SetGlobalTimeStep();
+    tau::MarkTimestepEnd();
 
     // check for signals
     signal = SignalHandler::CheckSignalFlags();
@@ -120,6 +121,7 @@ DriverStatus EvolutionDriver::Execute() {
       pmesh->mbcnt = 0;
       timer_main.reset();
     }
+
   } // END OF MAIN INTEGRATION LOOP ======================================================
   Kokkos::Profiling::popRegion(); // Driver_Main
 
