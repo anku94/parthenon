@@ -249,7 +249,7 @@ void MeshBlock::SetCostForLoadBalancing(double cost) {
 
 void MeshBlock::ResetCostForLoadBalancing() {
   if (pmy_mesh->lb_manual_) {
-    cost_ = 0;
+    cost_ = 1e-3;
   } else {
     cost_ = 1.0;
   }
