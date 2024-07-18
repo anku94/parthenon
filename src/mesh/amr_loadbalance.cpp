@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <iomanip>
 #include <iostream>
 #include <numeric>
 #include <sstream>
@@ -48,6 +49,60 @@
 #include "utils/error_checking.hpp"
 
 namespace parthenon {
+
+void PrintCosts(std::vector<double> const &costlist) {
+  if (Globals::my_rank != 0) {
+    return;
+  }
+
+  std::stringstream ss;
+  for (int i = 0; i < costlist.size(); i++) {
+    ss << std::fixed << std::setprecision(1) << costlist[i] << " ";
+    if (i % 32 == 31) {
+      ss << std::endl;
+    }
+  }
+
+  std::cout << "Costlist (" << costlist.size() << " blocks): " << std::endl
+            << ss.str() << std::endl;
+}
+
+void ComputeAssignmentStatistics(std::vector<double> const &costlist,
+                                 std::vector<int> const &ranklist, int nranks) {
+  if (Globals::my_rank != 0) {
+    return;
+  }
+
+  int nblocks = costlist.size();
+  std::vector<double> rank_costs(nranks, 0.0);
+  std::vector<double> rank_counts(nranks, 0.0);
+
+  for (int bidx = 0; bidx < nblocks; bidx++) {
+    int rank = ranklist[bidx];
+    rank_costs[rank] += costlist[bidx];
+    rank_counts[rank] += 1.0;
+  }
+
+  // compute max, med, min of costs
+  std::sort(rank_costs.begin(), rank_costs.end());
+  double min_cost = rank_costs.front();
+  double max_cost = rank_costs.back();
+  double med_cost = rank_costs[nranks / 2];
+
+  // compute max, med, min of counts
+  std::sort(rank_counts.begin(), rank_counts.end());
+  double min_count = rank_counts.front();
+  double max_count = rank_counts.back();
+  double med_count = rank_counts[nranks / 2];
+
+  std::cout << "Rank statistics (nblocks=" << nblocks << "):" << std::endl;
+#define FLOAT(x) std::fixed << std::setprecision(0) << x / 1e3
+  std::cout << "  Costs: min=" << FLOAT(min_cost) << " med=" << FLOAT(med_cost)
+            << " max=" << FLOAT(max_cost) << std::endl;
+  std::cout << "  Counts: min=" << min_count << " med=" << med_count
+            << " max=" << max_count << std::endl;
+#undef FLOAT
+}
 
 //----------------------------------------------------------------------------------------
 // \!fn void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin)
@@ -187,8 +242,20 @@ void Mesh::CalculateLoadBalance(std::vector<double> const &costlist,
   // if (ncycles_over == 1) {
   // AssignBlocks(costlist, ranklist);
   // } else {
-  amr::LoadBalancePolicies::AssignBlocks(Globals::lb_policy.c_str(), costlist, ranklist,
-                                         Globals::nranks);
+  if (Globals::nranks < 512) {
+    amr::LoadBalancePolicies::AssignBlocks(Globals::lb_policy.c_str(), costlist, ranklist,
+                                           Globals::nranks);
+  } else {
+    amr::LoadBalancePolicies::AssignBlocksParallel(
+        Globals::lb_policy.c_str(), costlist, ranklist, Globals::nranks, MPI_COMM_WORLD);
+  }
+  //
+  // if (Globals::my_rank == 0) {
+  //   std::cout << "[LB] " << Globals::my_rank << " assigned " << ranklist.size()
+  //             << " blocks, last rank: " << ranklist.back() << std::endl;
+  // }
+  ComputeAssignmentStatistics(costlist, ranklist, Globals::nranks);
+
   // }
 
   // Updates nslist with the ID of the starting block on each rank and the count of blocks
@@ -477,6 +544,8 @@ bool Mesh::GatherCostListAndCheckBalance() {
       }
     }
 
+    // PrintCosts(costlist);
+
     if (adaptive)
       lb_tolerance_ =
           2.0 * static_cast<double>(Globals::nranks) / static_cast<double>(nbtotal);
@@ -671,7 +740,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
         for (int l = 0; l < nleaf; l++) {
           if (newrank[nn + l] == Globals::my_rank) continue;
           buf_size += bsc2f;
-        }      // end loop over nleaf (unique to c2f branch in this step 6)
+        } // end loop over nleaf (unique to c2f branch in this step 6)
       } else { // f2c: restrict + pack + send
         if (newrank[nn] == Globals::my_rank) continue;
         buf_size += bsf2c;
@@ -766,7 +835,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
           dest[sb_idx] = newrank[nn + l];
           count[sb_idx] = bsc2f;
           sb_idx++;
-        }      // end loop over nleaf (unique to c2f branch in this step 6)
+        } // end loop over nleaf (unique to c2f branch in this step 6)
       } else { // f2c: restrict + pack + send
         if (newrank[nn] == Globals::my_rank) continue;
         sendbuf[sb_idx] =
@@ -789,7 +858,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
                                     dest[idx], tags[idx], MPI_COMM_WORLD,
                                     &(req_send[idx])));
     }
-  }                               // if (nsend !=0)
+  } // if (nsend !=0)
   Kokkos::Profiling::popRegion(); // Step 7
 #endif                            // MPI_PARALLEL
 
@@ -931,6 +1000,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
     delete[] req_recv;
   }
 #endif
+  MPI_Barrier(MPI_COMM_WORLD);
   Kokkos::Profiling::popRegion(); // Step 9
 
   // update the lists
@@ -946,6 +1016,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
 
   ResetLoadBalanceVariables();
 
+  MPI_Barrier(MPI_COMM_WORLD);
   Kokkos::Profiling::popRegion(); // RedistributeAndRefineMeshBlocks
                                   //
   auto _rnr_time = tau::GetUsSince(_ts_beg);
