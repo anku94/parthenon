@@ -88,6 +88,8 @@ ParthenonStatus ParthenonManager::ParthenonInitEnv(int argc, char *argv[]) {
       0);
 #endif
 
+  Globals::perf.Pause();
+
   Kokkos::initialize(argc, argv);
 
   // pgrete: This is a hack to disable allocation tracking until the Kokkos

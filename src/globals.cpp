@@ -45,6 +45,8 @@ Real receive_boundary_buffer_timeout;
 // timeouts for tasks
 Real current_task_runtime_sec;
 
+PerfManager perf;
+
 namespace refinement {
 // Communication buffers are packed into a `BndInfo` object.
 // if the size of this object is greater than min_num_bufs,

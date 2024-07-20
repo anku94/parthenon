@@ -21,6 +21,8 @@
 
 #include "basic_types.hpp"
 
+#include <perfsignal.h>
+
 namespace parthenon {
 namespace Globals {
 
@@ -44,6 +46,8 @@ extern SparseConfig sparse_config;
 
 extern Real receive_boundary_buffer_timeout;
 extern Real current_task_runtime_sec;
+
+extern PerfManager perf;
 
 namespace refinement {
 // Communication buffers are packed into a `BndInfo` object.

@@ -140,18 +140,24 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(int ncycles_over, ParameterInp
 
     default_pack_size_ = 1;
     GatherCostListAndCheckBalance();
+    Globals::perf.Resume();
     RedistributeAndRefineMeshBlocks(pin, app_in, nbtotal);
+    Globals::perf.Pause();
     modified = true;
   } else {
     if (nnew != 0 || ndel != 0) { // at least one (de)refinement happened
       GatherCostListAndCheckBalance();
+      Globals::perf.Resume();
       RedistributeAndRefineMeshBlocks(pin, app_in, nbtotal + nnew - ndel);
+      Globals::perf.Pause();
       modified = true;
     } else if (lb_flag_ && step_since_lb >= lb_interval_) {
       // if (!GatherCostListAndCheckBalance()) { // load imbalance detected
       // XXX AJ: R&R completely at the interval
       GatherCostListAndCheckBalance();
+      Globals::perf.Resume();
       RedistributeAndRefineMeshBlocks(pin, app_in, nbtotal);
+      Globals::perf.Pause();
       modified = true;
       // }
       lb_flag_ = false;
