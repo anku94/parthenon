@@ -290,7 +290,7 @@ endif()
 
 if (lb_FOUND)
   target_compile_definitions(parthenon PRIVATE LB_ENABLE)
-  target_link_libraries(parthenon PRIVATE lb)
+  target_link_libraries(parthenon PUBLIC lb)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "XL")
