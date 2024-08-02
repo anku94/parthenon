@@ -48,6 +48,10 @@
 #include "utils/buffer_utils.hpp"
 #include "utils/error_checking.hpp"
 
+#include "perfsignal.h"
+
+static PerfManager perf;
+
 namespace parthenon {
 
 void PrintCosts(std::vector<double> const &costlist) {
@@ -567,6 +571,8 @@ bool Mesh::GatherCostListAndCheckBalance() {
 
 void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput *app_in,
                                            int ntot) {
+  perf.Resume();
+
   auto _ts_beg = tau::GetUsSince(0);
 
   Kokkos::Profiling::pushRegion("RedistributeAndRefineMeshBlocks");
@@ -1027,6 +1033,8 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
                                   //
   auto _rnr_time = tau::GetUsSince(_ts_beg);
   tau::LogBlockEvent(-1, TAU_BLKEVT_US_COMP3, _rnr_time);
+
+  perf.Pause();
 }
 
 // AMR: step 6, branch 1 (same2same: just pack+send)
