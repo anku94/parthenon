@@ -37,6 +37,7 @@ struct SparseConfig {
   int deallocation_count = 5;
 };
 
+extern int timestep;
 extern int my_rank, nranks, nghost;
 extern size_t tau_amr_module;
 

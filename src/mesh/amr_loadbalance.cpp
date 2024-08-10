@@ -1028,7 +1028,11 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
 
   ResetLoadBalanceVariables();
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  // MPI_Barrier(MPI_COMM_WORLD);
+  int randsend = 0;
+  int randrecv;
+  MPI_Reduce(&randsend, &randrecv, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
   Kokkos::Profiling::popRegion(); // RedistributeAndRefineMeshBlocks
                                   //
   auto _rnr_time = tau::GetUsSince(_ts_beg);

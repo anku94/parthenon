@@ -27,6 +27,8 @@
 namespace parthenon {
 namespace Globals {
 
+int timestep;
+
 int nghost;
 
 // all of these global variables are set at the start of main():

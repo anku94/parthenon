@@ -1033,6 +1033,10 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
   bool init_done = true;
   const int nb_initial = nbtotal;
   do {
+    if (Globals::timestep > 2800) {
+      Globals::perf.Resume();
+    }
+
     int nmb = GetNumMeshBlocksThisRank(Globals::my_rank);
 
     // init meshblock data
@@ -1098,8 +1102,21 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
     for (int i = 0; i < num_partitions; i++) {
       auto &md = mesh_data.GetOrAdd("base", i);
       BuildBoundaryBuffers(md);
+      // SendBoundaryBuffers(md);
+    }
+
+    for (int i = 0; i < num_partitions; i++) {
+      auto &md = mesh_data.GetOrAdd("base", i);
+      StartReceiveBoundaryBuffers(md);
+      // SendBoundaryBuffers(md);
+    }
+
+    for (int i = 0; i < num_partitions; i++) {
+      auto &md = mesh_data.GetOrAdd("base", i);
+      // StartReceiveBoundaryBuffers(md);
       SendBoundaryBuffers(md);
     }
+
 
     // wait to receive FillGhost variables
     // TODO(someone) evaluate if ReceiveWithWait kind of logic is better, also related to
@@ -1119,6 +1136,10 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
       auto &md = mesh_data.GetOrAdd("base", i);
       // unpack FillGhost variables
       SetBoundaries(md);
+    }
+
+    if (Globals::timestep > 2800) {
+      Globals::perf.Pause();
     }
 
     //  Now do prolongation, compute primitives, apply BCs

@@ -43,6 +43,7 @@ void Driver::PreExecute() {
   }
 
   timer_main.reset();
+  Globals::timestep = 0;
 }
 
 void Driver::PostExecute(DriverStatus status) {
@@ -94,6 +95,7 @@ DriverStatus EvolutionDriver::Execute() {
     pmesh->PostStepUserDiagnosticsInLoop(pmesh, pinput, tm);
 
     tm.ncycle++;
+    Globals::timestep++;
     tm.time += tm.dt;
     pmesh->mbcnt += pmesh->nbtotal;
     pmesh->step_since_lb++;
