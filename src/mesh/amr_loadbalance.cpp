@@ -252,13 +252,22 @@ void Mesh::CalculateLoadBalance(std::vector<double> const &costlist,
   // if (ncycles_over == 1) {
   // AssignBlocks(costlist, ranklist);
   // } else {
+  // if (Globals::nranks < 512) {
+  //   amr::LoadBalancePolicies::AssignBlocks(Globals::lb_policy.c_str(), costlist, ranklist,
+  //                                          Globals::nranks);
+  // } else {
+  //   amr::LoadBalancePolicies::AssignBlocksParallel(
+  //       Globals::lb_policy.c_str(), costlist, ranklist, Globals::nranks, MPI_COMM_WORLD);
+  // }
+  //
+  MPI_Comm comm = MPI_COMM_WORLD;
   if (Globals::nranks < 512) {
-    amr::LoadBalancePolicies::AssignBlocks(Globals::lb_policy.c_str(), costlist, ranklist,
-                                           Globals::nranks);
-  } else {
-    amr::LoadBalancePolicies::AssignBlocksParallel(
-        Globals::lb_policy.c_str(), costlist, ranklist, Globals::nranks, MPI_COMM_WORLD);
+    comm = MPI_COMM_NULL;
   }
+
+  amr::LoadBalancePolicies::AssignBlocksCached(Globals::lb_policy.c_str(), costlist,
+                                               ranklist, Globals::nranks,
+                                               Globals::my_rank, comm);
   //
   // if (Globals::my_rank == 0) {
   //   std::cout << "[LB] " << Globals::my_rank << " assigned " << ranklist.size()
