@@ -187,9 +187,17 @@ void Mesh::CalculateLoadBalance(std::vector<double> const &costlist,
   // if (ncycles_over == 1) {
   // AssignBlocks(costlist, ranklist);
   // } else {
-  amr::LoadBalancePolicies::AssignBlocks(Globals::lb_policy.c_str(), costlist, ranklist,
-                                         Globals::nranks);
+  // amr::LoadBalancePolicies::AssignBlocks(Globals::lb_policy.c_str(), costlist, ranklist,
+                                         // Globals::nranks);
   // }
+  MPI_Comm comm = MPI_COMM_NULL;
+  if (Globals::nranks > 512) {
+    comm = MPI_COMM_WORLD;
+  }
+
+  amr::LoadBalancePolicies::AssignBlocksCached(Globals::lb_policy.c_str(), costlist,
+                                               ranklist, Globals::nranks,
+                                               Globals::my_rank, comm);
 
   // Updates nslist with the ID of the starting block on each rank and the count of blocks
   // on each rank.
@@ -671,7 +679,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
         for (int l = 0; l < nleaf; l++) {
           if (newrank[nn + l] == Globals::my_rank) continue;
           buf_size += bsc2f;
-        }      // end loop over nleaf (unique to c2f branch in this step 6)
+        } // end loop over nleaf (unique to c2f branch in this step 6)
       } else { // f2c: restrict + pack + send
         if (newrank[nn] == Globals::my_rank) continue;
         buf_size += bsf2c;
@@ -766,7 +774,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
           dest[sb_idx] = newrank[nn + l];
           count[sb_idx] = bsc2f;
           sb_idx++;
-        }      // end loop over nleaf (unique to c2f branch in this step 6)
+        } // end loop over nleaf (unique to c2f branch in this step 6)
       } else { // f2c: restrict + pack + send
         if (newrank[nn] == Globals::my_rank) continue;
         sendbuf[sb_idx] =
@@ -789,7 +797,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
                                     dest[idx], tags[idx], MPI_COMM_WORLD,
                                     &(req_send[idx])));
     }
-  }                               // if (nsend !=0)
+  } // if (nsend !=0)
   Kokkos::Profiling::popRegion(); // Step 7
 #endif                            // MPI_PARALLEL
 
