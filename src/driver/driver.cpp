@@ -42,6 +42,8 @@ void Driver::PreExecute() {
     std::cout << std::endl << "Setup complete, executing driver...\n" << std::endl;
   }
 
+  Globals::timestep = 0;
+
   timer_main.reset();
 }
 
@@ -94,6 +96,7 @@ DriverStatus EvolutionDriver::Execute() {
     pmesh->PostStepUserDiagnosticsInLoop(pmesh, pinput, tm);
 
     tm.ncycle++;
+    Globals::timestep++;
     tm.time += tm.dt;
     pmesh->mbcnt += pmesh->nbtotal;
     pmesh->step_since_lb++;

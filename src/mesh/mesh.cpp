@@ -1030,9 +1030,12 @@ void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin) {
 
 void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *app_in) {
   Kokkos::Profiling::pushRegion("Mesh::Initialize");
+
   bool init_done = true;
   const int nb_initial = nbtotal;
   do {
+
+    Kokkos::Profiling::pushRegion("Mesh::Initialize::PreComm");
     int nmb = GetNumMeshBlocksThisRank(Globals::my_rank);
 
     // init meshblock data
@@ -1086,6 +1089,8 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
     }
     tag_map.ResolveMap();
 
+    Kokkos::Profiling::popRegion(); // Mesh::Initialize::PreComm
+
     // Create send/recv MPI_Requests for all BoundaryData objects
     for (int i = 0; i < nmb; ++i) {
       auto &pmb = block_list[i];
@@ -1101,6 +1106,8 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
       SendBoundaryBuffers(md);
     }
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
     // wait to receive FillGhost variables
     // TODO(someone) evaluate if ReceiveWithWait kind of logic is better, also related to
     // https://github.com/lanl/parthenon/issues/418
@@ -1114,6 +1121,8 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
         }
       }
     } while (!all_received);
+
+    MPI_Barrier(MPI_COMM_WORLD);
 
     for (int i = 0; i < num_partitions; i++) {
       auto &md = mesh_data.GetOrAdd("base", i);

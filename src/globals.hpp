@@ -45,6 +45,8 @@ extern SparseConfig sparse_config;
 extern Real receive_boundary_buffer_timeout;
 extern Real current_task_runtime_sec;
 
+extern int timestep;
+
 namespace refinement {
 // Communication buffers are packed into a `BndInfo` object.
 // if the size of this object is greater than min_num_bufs,

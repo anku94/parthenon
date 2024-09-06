@@ -47,6 +47,10 @@
 #include "utils/buffer_utils.hpp"
 #include "utils/error_checking.hpp"
 
+#include "perfsignal.h"
+
+PerfManager perf;
+
 namespace parthenon {
 
 //----------------------------------------------------------------------------------------
@@ -738,7 +742,11 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
 
   // Step 7. allocate, pack and start sending buffers
   Kokkos::Profiling::pushRegion("Step 7: Pack and send buffers");
+  if (Globals::timestep > 100) perf.Resume();
+
   if (nsend != 0) {
+    Kokkos::Profiling::pushRegion("Step 7a: Pack buffers");
+
     req_send = new MPI_Request[nsend];
     std::vector<int> tags(nsend);
     std::vector<int> dest(nsend);
@@ -792,14 +800,23 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
     }
     // wait until all send buffers are filled
     Kokkos::fence();
+    Kokkos::Profiling::popRegion(); // Step 7a: Pack buffers
+                                    //
+    Kokkos::Profiling::pushRegion("Step 7b: MPI_Isend");
     for (auto idx = 0; idx < sb_idx; idx++) {
       PARTHENON_MPI_CHECK(MPI_Isend(sendbuf[idx].data(), count[idx], MPI_PARTHENON_REAL,
                                     dest[idx], tags[idx], MPI_COMM_WORLD,
                                     &(req_send[idx])));
     }
+    Kokkos::Profiling::popRegion(); // Step 7b: MPI_Isend
   } // if (nsend !=0)
+  
+  if (Globals::timestep > 100) perf.Pause();
+
   Kokkos::Profiling::popRegion(); // Step 7
 #endif                            // MPI_PARALLEL
+
+  MPI_Barrier(MPI_COMM_WORLD);
 
   // Step 8. construct a new MeshBlock list (moving the data within the MPI rank)
   Kokkos::Profiling::pushRegion("Step 8: Construct new MeshBlockList");
@@ -865,7 +882,10 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
       gid_lid_map[n] = nidx;
     }
   }
+
   Kokkos::Profiling::popRegion(); // Step 8: Construct new MeshBlockList
+
+  MPI_Barrier(MPI_COMM_WORLD);
 
   // Step 9. Receive the data and load into MeshBlocks
   Kokkos::Profiling::pushRegion("Step 9: Recv data and unpack");
@@ -940,6 +960,8 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
   }
 #endif
   Kokkos::Profiling::popRegion(); // Step 9
+
+  MPI_Barrier(MPI_COMM_WORLD);
 
   // update the lists
   loclist = std::move(newloc);
