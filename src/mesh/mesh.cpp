@@ -1091,20 +1091,45 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
 
     Kokkos::Profiling::popRegion(); // Mesh::Initialize::PreComm
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
     // Create send/recv MPI_Requests for all BoundaryData objects
+    Kokkos::Profiling::pushRegion("Mesh::Initialize::SetupPersistentMPI");
     for (int i = 0; i < nmb; ++i) {
       auto &pmb = block_list[i];
       pmb->swarm_data.Get()->SetupPersistentMPI();
     }
+    
+    Kokkos::Profiling::popRegion(); // Mesh::Initialize::SetupPersistentMPI
+                                    //
+    Kokkos::Profiling::pushRegion("Mesh::Initialize::BuildAndPost");
 
     // send FillGhost variables
     boundary_comm_map.clear();
     boundary_comm_flxcor_map.clear();
+    
     for (int i = 0; i < num_partitions; i++) {
       auto &md = mesh_data.GetOrAdd("base", i);
       BuildBoundaryBuffers(md);
+    }
+
+    for (int i = 0; i < num_partitions; i++) {
+      auto &md = mesh_data.GetOrAdd("base", i);
+      StartReceiveBoundaryBuffers(md);
+    }
+
+    Kokkos::Profiling::popRegion(); // Mesh::Initialize::BuildAndPost
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    Kokkos::Profiling::pushRegion("Mesh::Initialize::Send");
+
+    for (int i = 0; i < num_partitions; i++) {
+      auto &md = mesh_data.GetOrAdd("base", i);
       SendBoundaryBuffers(md);
     }
+
+    Kokkos::Profiling::popRegion(); // Mesh::Initialize::Send
 
     MPI_Barrier(MPI_COMM_WORLD);
 
