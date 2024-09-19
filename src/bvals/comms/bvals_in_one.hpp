@@ -46,6 +46,8 @@ template <BoundaryType bound_type>
 TaskStatus ReceiveBoundBufs(std::shared_ptr<MeshData<Real>> &md);
 template <BoundaryType bound_type>
 TaskStatus SetBounds(std::shared_ptr<MeshData<Real>> &md);
+template <BoundaryType bound_type>
+TaskStatus FinishSends(std::shared_ptr<MeshData<Real>> &md);
 
 inline TaskStatus SendBoundaryBuffers(std::shared_ptr<MeshData<Real>> &md) {
   return SendBoundBufs<BoundaryType::any>(md);
@@ -58,6 +60,9 @@ inline TaskStatus ReceiveBoundaryBuffers(std::shared_ptr<MeshData<Real>> &md) {
 }
 inline TaskStatus SetBoundaries(std::shared_ptr<MeshData<Real>> &md) {
   return SetBounds<BoundaryType::any>(md);
+}
+inline TaskStatus FinishBoundarySends(std::shared_ptr<MeshData<Real>> &md) {
+  return FinishSends<BoundaryType::any>(md);
 }
 
 TaskStatus StartReceiveFluxCorrections(std::shared_ptr<MeshData<Real>> &md);

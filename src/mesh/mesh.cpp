@@ -1103,6 +1103,12 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
     Kokkos::Profiling::popRegion(); // Mesh::Initialize::SetupPersistentMPI
                                     //
     Kokkos::Profiling::pushRegion("Mesh::Initialize::BuildAndPost");
+    for (int i = 0; i < num_partitions; i++) {
+      auto &md = mesh_data.GetOrAdd("base", i);
+      FinishBoundarySends(md);
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
 
     // send FillGhost variables
     boundary_comm_map.clear();

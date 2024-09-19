@@ -272,6 +272,27 @@ template TaskStatus SetBounds<BoundaryType::local>(std::shared_ptr<MeshData<Real
 template TaskStatus SetBounds<BoundaryType::nonlocal>(std::shared_ptr<MeshData<Real>> &);
 
 template <BoundaryType bound_type>
+TaskStatus FinishSends(std::shared_ptr<MeshData<Real>> &md) {
+  Kokkos::Profiling::pushRegion("Task_FinishSends");
+
+  Mesh *pmesh = md->GetMeshPointer();
+  auto &cache = md->GetBvarsCache().GetSubCache(bound_type, true);
+
+  if (cache.buf_vec.size() > 0) {
+    std::for_each(std::begin(cache.buf_vec), std::end(cache.buf_vec),
+                  [](auto pbuf) { pbuf->FinishSend(); });
+  }
+
+  Kokkos::Profiling::popRegion(); // Task_FinishSends
+  return TaskStatus::complete;
+}
+
+template TaskStatus FinishSends<BoundaryType::any>(std::shared_ptr<MeshData<Real>> &);
+template TaskStatus FinishSends<BoundaryType::local>(std::shared_ptr<MeshData<Real>> &);
+template TaskStatus
+FinishSends<BoundaryType::nonlocal>(std::shared_ptr<MeshData<Real>> &);
+
+template <BoundaryType bound_type>
 TaskStatus ProlongateBounds(std::shared_ptr<MeshData<Real>> &md) {
   Kokkos::Profiling::pushRegion("Task_ProlongateBoundaries");
 
@@ -338,11 +359,13 @@ TaskID AddBoundaryExchangeTasks(TaskID dependency, TaskList &tl,
   //            move to the commented out code above, this needs to be fixed and
   //            the prolongation and physical boundary conditions need to be removed
   //            from the end of SetBounds
-  auto send = tl.AddTask(dependency, SendBoundBufs<any>, md);
-  auto recv = tl.AddTask(dependency, ReceiveBoundBufs<any>, md);
+  auto startrecv = tl.AddTask(dependency, StartReceiveBoundBufs<any>, md);
+  auto send = tl.AddTask(startrecv, SendBoundBufs<any>, md);
+  auto recv = tl.AddTask(send, ReceiveBoundBufs<any>, md);
   auto set = tl.AddTask(recv, SetBounds<any>, md);
+  auto fin = tl.AddTask(set, FinishSends<any>, md);
 
-  return set;
+  return fin;
 }
 
 TaskID AddBoundarySendTasks(TaskID dependency, TaskList &tl,
