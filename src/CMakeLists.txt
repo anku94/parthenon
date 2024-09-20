@@ -226,6 +226,7 @@ set(PARTHENON_SRCS
   utils/buffer_utils.hpp
   utils/change_rundir.cpp
   utils/communication_buffer.hpp
+  utils/communication_buffer.cpp
   utils/cleantypes.hpp
   utils/concepts_lite.hpp
   utils/debug_utils.cpp

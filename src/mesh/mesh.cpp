@@ -1103,17 +1103,12 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
     Kokkos::Profiling::popRegion(); // Mesh::Initialize::SetupPersistentMPI
                                     //
     Kokkos::Profiling::pushRegion("Mesh::Initialize::BuildAndPost");
-    for (int i = 0; i < num_partitions; i++) {
-      auto &md = mesh_data.GetOrAdd("base", i);
-      FinishBoundarySends(md);
-    }
+
+    ClearCommBuffers(num_partitions);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     // send FillGhost variables
-    boundary_comm_map.clear();
-    boundary_comm_flxcor_map.clear();
-    
     for (int i = 0; i < num_partitions; i++) {
       auto &md = mesh_data.GetOrAdd("base", i);
       BuildBoundaryBuffers(md);
@@ -1220,6 +1215,29 @@ std::shared_ptr<MeshBlock> Mesh::FindMeshBlock(int tgid) const {
                           "MeshBlock local index out of bounds.");
   PARTHENON_DEBUG_REQUIRE(block_list[i]->gid == tgid, "MeshBlock not found!");
   return block_list[i];
+}
+
+void Mesh::ClearCommBuffers(int num_partitions) {
+    for (int i = 0; i < num_partitions; i++) {
+      auto &md = mesh_data.GetOrAdd("base", i);
+      for (auto &pair : boundary_comm_map) {
+        auto& comm_buf = pair.second;
+        if (comm_buf.IsSendPending()) {
+          send_drain_queue_.AddSendRequest(comm_buf.ReleaseMPIReq());
+        }
+      }
+
+      for (auto &pair : boundary_comm_flxcor_map) {
+        auto& comm_buf = pair.second;
+        if (comm_buf.IsSendPending()) {
+          send_drain_queue_.AddSendRequest(comm_buf.ReleaseMPIReq());
+        }
+      }
+    }
+
+    boundary_comm_map.clear();
+    boundary_comm_flxcor_map.clear();
+    send_drain_queue_.TryDraining();
 }
 
 //----------------------------------------------------------------------------------------

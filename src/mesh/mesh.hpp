@@ -48,6 +48,7 @@
 #include "parameter_input.hpp"
 #include "parthenon_arrays.hpp"
 #include "utils/communication_buffer.hpp"
+#include "utils/drain_queue.hpp"
 #include "utils/hash.hpp"
 #include "utils/object_pool.hpp"
 #include "utils/partition_stl_containers.hpp"
@@ -112,6 +113,7 @@ class Mesh {
 
   // functions
   void Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *app_in);
+  void ClearCommBuffers(int num_partitions);
   void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                  BoundaryFlag *block_bcs);
   void OutputCycleDiagnostics();
@@ -255,6 +257,9 @@ class Mesh {
 #ifdef MPI_PARALLEL
   // Global map of MPI comms for separate variables
   std::unordered_map<std::string, MPI_Comm> mpi_comm_map_;
+ public:
+  SendDrainQueue send_drain_queue_;
+ private:
 #endif
 
   // functions
