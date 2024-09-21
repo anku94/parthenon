@@ -69,10 +69,6 @@ CommBuffer<T>::~CommBuffer() {
                                                started_irecv_, my_rank, tag_, send_rank_,
                                                recv_rank_, active_);
       std::cout << "CommBuffer destruction took " << ms_dura << "ms" << std::endl;
-      std::cout << "Timestep: " << Globals::timestep << std::endl;
-      if (Globals::timestep > 100) {
-        sleep(1000);
-      }
     }
   }
 #endif

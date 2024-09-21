@@ -59,25 +59,27 @@ public:
   };
 
   void ForceDrain() {
+    if (queue_.size() == 0) {
+      return;
+    }
+
     std::cout << "[DrainQueue] Forcing drain of " << queue_.size() << " requests at rank "
               << Globals::my_rank << std::endl;
 
     for (auto it = queue_.begin(); it != queue_.end();) {
       auto elem = *it;
       MPI_Status status;
-      PARTHENON_MPI_CHECK(MPI_Wait(elem.request.get(), &status));
+      std::cout << "Not calling MPI_Wait() because PSM is a moron!" << std::endl;
+      // PARTHENON_MPI_CHECK(MPI_Wait(elem.request.get(), &status));
+      it++;
     }
   };
 
   ~SendDrainQueue() {
     if (queue_.size() > 0) {
-      std::cout << "[DrainQueue] Destructing with " << queue_.size()
+      std::cout << "[DrainQueue] " << queue_.size()
                 << " requests at rank " << Globals::my_rank << std::endl;
-      ForceDrain();
-    }
-
-    if (queue_.size() > 0) {
-      std::stringstream msg;
+      // ForceDrain();
     }
   };
 

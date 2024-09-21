@@ -126,6 +126,10 @@ DriverStatus EvolutionDriver::Execute() {
     }
 
   } // END OF MAIN INTEGRATION LOOP ======================================================
+
+  int num_partitions = pmesh->DefaultNumPartitions();
+  pmesh->ClearCommBuffers(num_partitions);
+  pmesh->send_drain_queue_.ForceDrain();
   Kokkos::Profiling::popRegion(); // Driver_Main
 
   pmesh->UserWorkAfterLoop(pmesh, pinput, tm);
