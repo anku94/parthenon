@@ -1091,7 +1091,7 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
 
     Kokkos::Profiling::popRegion(); // Mesh::Initialize::PreComm
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    // MPI_Barrier(MPI_COMM_WORLD);
 
     // Create send/recv MPI_Requests for all BoundaryData objects
     Kokkos::Profiling::pushRegion("Mesh::Initialize::SetupPersistentMPI");
@@ -1106,7 +1106,7 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
 
     ClearCommBuffers(num_partitions);
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    // MPI_Barrier(MPI_COMM_WORLD);
 
     // send FillGhost variables
     for (int i = 0; i < num_partitions; i++) {
@@ -1121,7 +1121,7 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
 
     Kokkos::Profiling::popRegion(); // Mesh::Initialize::BuildAndPost
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    // MPI_Barrier(MPI_COMM_WORLD);
 
     Kokkos::Profiling::pushRegion("Mesh::Initialize::Send");
 
@@ -1132,7 +1132,7 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
 
     Kokkos::Profiling::popRegion(); // Mesh::Initialize::Send
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    // MPI_Barrier(MPI_COMM_WORLD);
 
     // wait to receive FillGhost variables
     // TODO(someone) evaluate if ReceiveWithWait kind of logic is better, also related to
@@ -1148,7 +1148,7 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
       }
     } while (!all_received);
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    // MPI_Barrier(MPI_COMM_WORLD);
 
     for (int i = 0; i < num_partitions; i++) {
       auto &md = mesh_data.GetOrAdd("base", i);
