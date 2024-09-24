@@ -883,7 +883,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, ApplicationInput
     }
   }
 
-  // Kokkos::Profiling::popRegion(); // Step 8: Construct new MeshBlockList
+  Kokkos::Profiling::popRegion(); // Step 8: Construct new MeshBlockList
 
   // MPI_Barrier(MPI_COMM_WORLD);
 
