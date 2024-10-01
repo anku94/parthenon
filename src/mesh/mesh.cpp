@@ -1104,7 +1104,7 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
                                     //
     Kokkos::Profiling::pushRegion("Mesh::Initialize::BuildAndPost");
 
-    ClearCommBuffers(num_partitions);
+    // ClearCommBuffers(num_partitions);
 
     // MPI_Barrier(MPI_COMM_WORLD);
 
