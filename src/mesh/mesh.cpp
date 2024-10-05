@@ -1104,7 +1104,7 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
                                     //
     Kokkos::Profiling::pushRegion("Mesh::Initialize::BuildAndPost");
 
-    // ClearCommBuffers(num_partitions);
+    ClearCommBuffers(num_partitions, false);
 
     // MPI_Barrier(MPI_COMM_WORLD);
 
@@ -1217,27 +1217,34 @@ std::shared_ptr<MeshBlock> Mesh::FindMeshBlock(int tgid) const {
   return block_list[i];
 }
 
-void Mesh::ClearCommBuffers(int num_partitions) {
-    for (int i = 0; i < num_partitions; i++) {
-      auto &md = mesh_data.GetOrAdd("base", i);
-      for (auto &pair : boundary_comm_map) {
-        auto& comm_buf = pair.second;
-        if (comm_buf.IsSendPending()) {
-          send_drain_queue_.AddSendRequest(comm_buf.ReleaseMPIReq());
-        }
-      }
+void Mesh::ClearCommBuffers(int num_partitions, bool use_drainq) {
+  if (!use_drainq) {
+    boundary_comm_map.clear();
+    boundary_comm_flxcor_map.clear();
+    return;
+  }
 
-      for (auto &pair : boundary_comm_flxcor_map) {
-        auto& comm_buf = pair.second;
-        if (comm_buf.IsSendPending()) {
-          send_drain_queue_.AddSendRequest(comm_buf.ReleaseMPIReq());
-        }
+  for (int i = 0; i < num_partitions; i++) {
+    auto &md = mesh_data.GetOrAdd("base", i);
+    for (auto &pair : boundary_comm_map) {
+      auto& comm_buf = pair.second;
+      if (comm_buf.IsSendPending()) {
+        send_drain_queue_.AddSendRequest(comm_buf.ReleaseMPIReq());
       }
     }
 
-    boundary_comm_map.clear();
-    boundary_comm_flxcor_map.clear();
-    send_drain_queue_.TryDraining();
+    for (auto &pair : boundary_comm_flxcor_map) {
+      auto& comm_buf = pair.second;
+      if (comm_buf.IsSendPending()) {
+        send_drain_queue_.AddSendRequest(comm_buf.ReleaseMPIReq());
+      }
+    }
+  }
+
+  boundary_comm_map.clear();
+  boundary_comm_flxcor_map.clear();
+
+  send_drain_queue_.TryDraining();
 }
 
 //----------------------------------------------------------------------------------------
