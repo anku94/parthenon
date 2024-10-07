@@ -355,6 +355,8 @@ class TaskRegion {
   int size() const { return lists.size(); }
 
   bool CheckAndUpdate() {
+    Kokkos::Profiling::pushRegion("TaskRegion::CheckAndUpdate");
+
     for (auto &reg_dep : id_for_reg) {
       auto reg_id = reg_dep.first;
       if (HasRun(reg_id) && !all_done[reg_id].active) {
@@ -382,6 +384,8 @@ class TaskRegion {
     for (auto i = 0; i < num_lists; ++i) {
       if (lists[i].IsComplete()) complete_cnt++;
     }
+
+    Kokkos::Profiling::popRegion(); // TaskRegion::CheckAndUpdate
     return (complete_cnt == num_lists);
   }
 
