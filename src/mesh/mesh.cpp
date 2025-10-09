@@ -33,7 +33,6 @@
 #include <utility>
 #include <vector>
 
-#include <policy.h>
 
 #include "basic_types.hpp"
 #include "bvals/comms/bvals_in_one.hpp"

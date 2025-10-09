@@ -29,8 +29,7 @@
 #include <string>
 #include <tuple>
 
-#include <lb_policies.h>
-#include <policy.h>
+#include <amr_lb.h>
 
 #include "parthenon_mpi.hpp"
 
@@ -47,9 +46,9 @@
 #include "utils/buffer_utils.hpp"
 #include "utils/error_checking.hpp"
 
-#include "perfsignal.h"
+// #include "perfsignal.h"
 
-PerfManager perf;
+// PerfManager perf;
 
 namespace parthenon {
 
@@ -188,20 +187,18 @@ void Mesh::CalculateLoadBalance(std::vector<double> const &costlist,
     std::cout << "[LB] " << Globals::lb_policy << " being invoked!" << std::endl;
   }
 
-  // if (ncycles_over == 1) {
-  // AssignBlocks(costlist, ranklist);
-  // } else {
-  // amr::LoadBalancePolicies::AssignBlocks(Globals::lb_policy.c_str(), costlist, ranklist,
-                                         // Globals::nranks);
-  // }
+  // Legacy direct calls lived here before the amr::lb wrapper existed. Keeping the
+  // block as documentation of the old behavior.
   MPI_Comm comm = MPI_COMM_NULL;
   if (Globals::nranks > 512) {
     comm = MPI_COMM_WORLD;
   }
 
-  amr::LoadBalancePolicies::AssignBlocksCached(Globals::lb_policy.c_str(), costlist,
-                                               ranklist, Globals::nranks,
-                                               Globals::my_rank, comm);
+  amr::lb::PlacementArgs placement{Globals::lb_policy, costlist, ranklist,
+                                   Globals::nranks};
+  amr::lb::PlacementArgsMpi mpi_args{placement, Globals::my_rank, Globals::nranks,
+                                     comm};
+  (void)amr::lb::LoadBalance::AssignBlocksMpi(mpi_args);
 
   // Updates nslist with the ID of the starting block on each rank and the count of blocks
   // on each rank.
