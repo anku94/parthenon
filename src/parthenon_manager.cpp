@@ -43,6 +43,8 @@
 #include "utils/error_checking.hpp"
 #include "utils/utils.hpp"
 
+#include <mon_client/mpi_client.h>
+
 namespace parthenon {
 
 ParthenonStatus ParthenonManager::ParthenonInit(int argc, char *argv[]) {
@@ -77,6 +79,10 @@ ParthenonStatus ParthenonManager::ParthenonInitEnv(int argc, char *argv[]) {
     // MPI_Finalize();
     return ParthenonStatus::error;
   }
+
+  // Init ORCA
+  mon::client::InitOpts opts{Globals::my_rank, Globals::nranks, 0, {}};
+  mon::client::MpiClient::GetInstance()->Init(opts);
 #else  // no MPI
   Globals::my_rank = 0;
   Globals::nranks = 1;
@@ -85,7 +91,7 @@ ParthenonStatus ParthenonManager::ParthenonInitEnv(int argc, char *argv[]) {
 #ifdef TAUPROF_ENABLE
   Globals::tau_amr_module = TAU_CREATE_TRIGGER("load balance module");
   Tau_enable_plugin_for_trigger_event(TAU_PLUGIN_EVENT_TRIGGER, Globals::tau_amr_module,
-      0);
+                                      0);
 #endif
 
   Kokkos::initialize(argc, argv);
@@ -210,6 +216,7 @@ ParthenonStatus ParthenonManager::ParthenonFinalize() {
   pmesh.reset();
   Kokkos::finalize();
 #ifdef MPI_PARALLEL
+  mon::client::MpiClient::GetInstance()->Destroy();
   MPI_Finalize();
 #endif
   return ParthenonStatus::complete;

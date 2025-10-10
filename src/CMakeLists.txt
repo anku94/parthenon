@@ -294,6 +294,8 @@ if (lb_FOUND)
   target_link_libraries(parthenon PRIVATE lb)
 endif()
 
+target_link_libraries(parthenon PRIVATE orca::client)
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL "XL")
   target_compile_options(parthenon PUBLIC -std=c++1y -qxflag=disable__cplusplusOverride)
 endif()
