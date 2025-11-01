@@ -58,6 +58,7 @@ void Driver::PostExecute(DriverStatus status) {
         pmesh->mbcnt * static_cast<std::uint64_t>(pmesh->GetNumberOfMeshBlockCells());
 
     auto wtime = timer_main.seconds();
+    std::cout << std::fixed << std::setprecision(4);
     std::cout << std::endl << "walltime used = " << wtime << std::endl;
     std::cout << "zone-cycles/wallsecond = " << static_cast<double>(zonecycles) / wtime
               << std::endl;
