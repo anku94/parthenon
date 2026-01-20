@@ -133,7 +133,7 @@ DriverStatus EvolutionDriver::Execute() {
   } // END OF MAIN INTEGRATION LOOP ======================================================
 
   int num_partitions = pmesh->DefaultNumPartitions();
-  pmesh->ClearCommBuffers(num_partitions);
+  pmesh->ClearCommBuffers_env(num_partitions);
   pmesh->send_drain_queue_.ForceDrain();
   Kokkos::Profiling::popRegion(); // Driver_Main
 
@@ -179,7 +179,7 @@ void EvolutionDriver::InitializeBlockTimeStepsAndBoundaries() {
   }
   // calculate the first time step using Mesh function
   const int num_partitions = pmesh->DefaultNumPartitions();
-  pmesh->ClearCommBuffers(num_partitions);
+  pmesh->ClearCommBuffers_env(num_partitions);
 
   for (int i = 0; i < num_partitions; i++) {
     auto &mbase = pmesh->mesh_data.GetOrAdd("base", i);

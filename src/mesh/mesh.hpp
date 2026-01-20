@@ -114,6 +114,8 @@ class Mesh {
   // functions
   void Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *app_in);
   void ClearCommBuffers(int num_partitions);
+  void ClearCommBuffers_env(int num_partitions);
+  void ClearCommBuffers_bad(int num_partitions);
   void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                  BoundaryFlag *block_bcs);
   void OutputCycleDiagnostics();

@@ -1103,7 +1103,9 @@ void Mesh::Initialize(bool init_problem, ParameterInput *pin, ApplicationInput *
                                     //
     Kokkos::Profiling::pushRegion("Mesh::Initialize::BuildAndPost");
 
-    ClearCommBuffers(num_partitions);
+    Kokkos::Profiling::pushRegion("Mesh::Initialize::BuildAndPost::Clear");
+    ClearCommBuffers_env(num_partitions);
+    Kokkos::Profiling::popRegion(); // Mesh::Initialize::BuildAndPost::Clear
 
     // MPI_Barrier(MPI_COMM_WORLD);
 
@@ -1237,6 +1239,23 @@ void Mesh::ClearCommBuffers(int num_partitions) {
     boundary_comm_map.clear();
     boundary_comm_flxcor_map.clear();
     send_drain_queue_.TryDraining();
+}
+
+void Mesh::ClearCommBuffers_env(int num_partitions) {
+    // We use PARTHENON_CLEAR_BAD to reintroduce the anomaly
+    static const char* env = std::getenv("PARTHENON_CLEAR_BAD");
+    static const bool use_bad = (env != nullptr) and (env[0] == '1');
+
+    if (use_bad) {
+      ClearCommBuffers_bad(num_partitions);
+    } else {
+      ClearCommBuffers(num_partitions);
+    }
+}
+
+void Mesh::ClearCommBuffers_bad(int num_partitions) {
+    boundary_comm_map.clear();
+    boundary_comm_flxcor_map.clear();
 }
 
 //----------------------------------------------------------------------------------------
