@@ -47,7 +47,7 @@ CommBuffer<T>::~CommBuffer() {
   if (my_request_.use_count() == 1) { // This is the last shallow copy of this buffer
     // Make sure that there are no MPI requests still flying around associated
     // with this buffer before destroying it
-    auto ms_start = CommBufferLogging::GetMsSince(0);
+    // auto ms_start = CommBufferLogging::GetMsSince(0);
 
     int flag;
     MPI_Status status;
@@ -57,19 +57,18 @@ CommBuffer<T>::~CommBuffer() {
       if (*comm_type_ == BuffCommType::sender) {
         PARTHENON_MPI_CHECK(MPI_Wait(my_request_.get(), MPI_STATUS_IGNORE));
       } else {
-        std::cout << "CommBuffer Cancel/Wait Path" << std::endl;
         PARTHENON_MPI_CHECK(MPI_Cancel(my_request_.get()));
         PARTHENON_MPI_CHECK(MPI_Wait(my_request_.get(), MPI_STATUS_IGNORE));
       }
     }
 
-    auto ms_dura = CommBufferLogging::GetMsSince(ms_start);
-    if (ms_dura > 10) {
-      CommBufferLogging::LogThingsInCommBuffer(state_, comm_type_, buf_.size(),
-                                               started_irecv_, my_rank, tag_, send_rank_,
-                                               recv_rank_, active_);
-      std::cout << "CommBuffer destruction took " << ms_dura << "ms" << std::endl;
-    }
+  //   auto ms_dura = CommBufferLogging::GetMsSince(ms_start);
+  //   if (ms_dura > 10) {
+  //     CommBufferLogging::LogThingsInCommBuffer(state_, comm_type_, buf_.size(),
+  //                                              started_irecv_, my_rank, tag_, send_rank_,
+  //                                              recv_rank_, active_);
+  //     std::cout << "CommBuffer destruction took " << ms_dura << "ms" << std::endl;
+  //   }
   }
 #endif
 }
