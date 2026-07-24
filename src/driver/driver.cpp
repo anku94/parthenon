@@ -29,7 +29,7 @@
 #include "parthenon_mpi.hpp"
 #include "utils/utils.hpp"
 
-#include <mon_client/mpi_client.h>
+#include <orca/mpi_client.h>
 
 
 namespace parthenon {
@@ -111,7 +111,7 @@ DriverStatus EvolutionDriver::Execute() {
     time_LBandAMR += timer_LBandAMR.seconds();
     SetGlobalTimeStep();
     tau::MarkTimestepEnd();
-    mon::client::MpiClient::GetInstance()->PostTimestepAdvance();
+    mon::MpiClient::GetInstance()->PostTimestepAdvance();
 
     // check for signals
     signal = SignalHandler::CheckSignalFlags();
