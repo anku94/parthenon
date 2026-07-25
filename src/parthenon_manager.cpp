@@ -43,7 +43,7 @@
 #include "utils/error_checking.hpp"
 #include "utils/utils.hpp"
 
-#include <mon_client/mpi_client.h>
+#include <orca/mpi_client.h>
 
 namespace parthenon {
 
@@ -81,8 +81,8 @@ ParthenonStatus ParthenonManager::ParthenonInitEnv(int argc, char *argv[]) {
   }
 
   // Init ORCA
-  mon::client::InitOpts opts{Globals::my_rank, Globals::nranks, 0, {}};
-  mon::client::MpiClient::GetInstance()->Init(opts);
+  mon::InitOpts opts{Globals::my_rank, Globals::nranks, 0, {}};
+  mon::MpiClient::GetInstance()->Init(opts);
 #else  // no MPI
   Globals::my_rank = 0;
   Globals::nranks = 1;
@@ -216,7 +216,7 @@ ParthenonStatus ParthenonManager::ParthenonFinalize() {
   pmesh.reset();
   Kokkos::finalize();
 #ifdef MPI_PARALLEL
-  mon::client::MpiClient::GetInstance()->Destroy();
+  mon::MpiClient::GetInstance()->Destroy();
   MPI_Finalize();
 #endif
   return ParthenonStatus::complete;
